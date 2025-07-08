@@ -7,7 +7,7 @@ Publish IPFS webapps which require user consent to update, see:
 ## Usage
 ```
 npx ipfs-boot init https://github.com/user/react123 react123
-npx ipfs-boot publish --cid $CID --version v0.0.1 --notes "my notes!"
+npx ipfs-boot publish --cid $CID --version v0.0.1 --notes "release notes"
 cat versions.json
 ```
 
