@@ -1,0 +1,46 @@
+FROM ubuntu:24.04
+
+RUN apt update
+
+# install rust
+WORKDIR /root/rust
+RUN apt install -y curl build-essential
+RUN curl --proto '=https' --tlsv1.3 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+RUN rustup install 1.82.0 && rustup default 1.82.0
+RUN rustup target add wasm32-unknown-emscripten
+
+# install emscripten
+WORKDIR /root
+RUN apt install -y git python3
+RUN git clone --depth 1 --branch 3.1.72 https://github.com/emscripten-core/emsdk /root/emsdk
+RUN /root/emsdk/emsdk install 3.1.72
+RUN /root/emsdk/emsdk activate 3.1.72
+RUN bash -c ". /root/emsdk/emsdk_env.sh && emcc --version"
+
+# rust packages
+RUN mkdir -p /root/rust/src
+WORKDIR /root/rust
+COPY rust/Cargo.toml .
+COPY rust/Cargo.lock .
+RUN mkdir -p /root/rust/.cargo
+COPY rust/.cargo/config.toml .cargo/
+RUN touch src/main.rs
+RUN cargo fetch --locked --target=wasm32-unknown-emscripten
+RUN rm -r src/
+
+# sources
+WORKDIR /root/rust
+COPY rust/src/ src/
+
+# build
+COPY <<EOF /root/cmd.sh
+bash -c ". /root/emsdk/emsdk_env.sh && cargo build --target=wasm32-unknown-emscripten --release"
+mkdir dist/
+mv target/wasm32-unknown-emscripten/release/nitro_wasm.wasm dist/
+mv target/wasm32-unknown-emscripten/release/nitro_wasm.js dist/
+cp -r dist/* /root/dist
+EOF
+
+RUN chmod +x /root/cmd.sh
+CMD ["bash", "-c", "/root/cmd.sh"]

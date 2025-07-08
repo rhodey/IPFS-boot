@@ -1,0 +1,70 @@
+name: Run build
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      sha256_wasm: ${{ steps.build_wasm.outputs.sha256_wasm }}
+      sha256_js: ${{ steps.build_wasm.outputs.sha256_js }}
+      cidv0: ${{ steps.build_webapp.outputs.cidv0 }}
+      cidv1: ${{ steps.build_webapp.outputs.cidv1 }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build docker wasm
+        run: docker buildx build --platform=linux/amd64 -f Dockerfile.wasm -t ipfs-wasm .
+
+      - name: Build wasm
+        id: build_wasm
+        run: |
+          docker run --rm -i --platform=linux/amd64 -v ./dist:/root/dist ipfs-wasm
+          sha256_wasm=$(sha256sum dist/nitro_wasm.wasm | awk '{print $1}')
+          sha256_js=$(sha256sum dist/nitro_wasm.js | awk '{print $1}')
+          echo "sha256_wasm=$sha256_wasm" >> $GITHUB_OUTPUT
+          echo "sha256_js=$sha256_js" >> $GITHUB_OUTPUT
+
+      - name: Check wasm
+        run: |
+          sha256sum dist/nitro_wasm.wasm >> hash.txt
+          sha256sum javascript/assets/nitro_wasm.wasm >> hash.txt
+          sha256sum --check hash.txt || exit 1
+          echo "WASM ok"
+          sha256sum dist/nitro_wasm.js >> hash.txt
+          sha256sum javascript/assets/nitro_wasm.js >> hash.txt
+          sha256sum --check hash.txt || exit 1
+          echo "WASM JS ok"
+
+      - name: Build docker webapp
+        run: docker buildx build --platform=linux/amd64 -t ipfs-boot .
+
+      - name: Build webapp
+        id: build_webapp
+        run: |
+          docker run --rm -i --platform=linux/amd64 -v ./dist:/root/dist ipfs-boot | tee out.txt
+          cidv0=$(cat out.txt | grep CIDv0 | awk '{print $3}')
+          cidv1=$(cat out.txt | grep CIDv1 | awk '{print $3}')
+          echo "cidv0=$cidv0" >> $GITHUB_OUTPUT
+          echo "cidv1=$cidv1" >> $GITHUB_OUTPUT
+
+      - name: Summary
+        run: |
+          echo "Build ok"
+          echo "Hash wasm = ${{ steps.build_wasm.outputs.sha256_wasm }}"
+          echo "Hash wasm js = ${{ steps.build_wasm.outputs.sha256_js }}"
+          echo "CIDv0 = ${{ steps.build_webapp.outputs.cidv0 }}"
+          echo "CIDv1 = ${{ steps.build_webapp.outputs.cidv1 }}"
+          echo "Build ok:" >> $GITHUB_STEP_SUMMARY
+          echo "+ Hash wasm = ${{ steps.build_wasm.outputs.sha256_wasm }}" >> $GITHUB_STEP_SUMMARY
+          echo "+ Hash wasm js = ${{ steps.build_wasm.outputs.sha256_js }}" >> $GITHUB_STEP_SUMMARY
+          echo "+ CIDv0 = ${{ steps.build_webapp.outputs.cidv0 }}" >> $GITHUB_STEP_SUMMARY
+          echo "+ CIDv1 = ${{ steps.build_webapp.outputs.cidv1 }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/

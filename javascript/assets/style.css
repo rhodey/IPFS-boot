@@ -1,0 +1,69 @@
+#_boot {
+  text-align: center;
+}
+
+#_boot h1 {
+  text-decoration: underline;
+}
+
+#_boot table {
+  margin: auto;
+}
+
+#_boot table td {
+  padding: 10px;
+}
+
+#_boot h2 {
+  font-style: italic;
+  font-weight: normal;
+}
+
+#_boot .bootDocs {
+  margin: auto;
+  font-size: 16px;
+  font-style: italic;
+}
+
+#_boot .bootNotes {
+  margin: auto;
+  display: block;
+  width: 500px;
+  font-size: 24px;
+}
+
+#_boot .toastContainer {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+}
+
+#_boot .toastMessage {
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 15px 25px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-width: 300px;
+  text-align: center;
+  overflow-wrap: break-word;
+  font-family: Arial, sans-serif;
+}
+
+#_boot .toastMessage a:hover {
+  cursor: pointer;
+}
+
+#_boot .toastSuccess {
+  background-color: rgba(76, 175, 80, 0.9);
+}
+
+#_boot .toastError {
+  background-color: rgba(244, 67, 54, 0.9);
+}
+
+#_boot .bootNotif { }
+#_boot .bootNotifText { }
+#_boot .bootNotifSelect { }
+#_boot .bootNotifDismiss { }

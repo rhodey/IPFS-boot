@@ -1,0 +1,15 @@
+.env*
+*.swp
+
+.git/
+dist/
+
+javascript/*.swp
+javascript/assets/*.swp
+javascript/src/*.swp
+javascript/test/*.swp
+javascript/dist
+javascript/node_modules
+
+rust/src/*.swp
+rust/target

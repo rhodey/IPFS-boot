@@ -1,0 +1,105 @@
+FROM ubuntu:24.04
+
+RUN apt update
+RUN apt install -y curl unzip git
+
+# ipfs cli = native pinning
+WORKDIR /root/ipfs
+RUN curl https://dist.ipfs.tech/kubo/v0.32.0/kubo_v0.32.0_linux-amd64.tar.gz -o kubo_v0.32.0_linux-amd64.tar.gz
+RUN tar -xvzf kubo_v0.32.0_linux-amd64.tar.gz
+RUN cd kubo && bash -c "./install.sh"
+
+COPY <<EOF /root/ipfs.sh
+# add dir
+ipfs init >>/dev/null 2>&1
+cid=\$(ipfs add -q -r /root/dist | tail -n 1)
+echo "CIDv0 = \$cid"
+cb32=\$(ipfs cid base32 "\$cid")
+echo "CIDv1 = \$cb32"
+# pin local
+echo "starting daemon ..."
+ipfs daemon >>/dev/null 2>&1 &
+sleep 3
+ipfs pin add "$\cb32"
+# upload
+ipfs pin remote service add my_pin "\$pin_api" "\$pin_token"
+echo "ok. may take up to 10 minutes for remote pin to succeed ..."
+echo "may never succeed depending on your NAT ..."
+begin=\$(date)
+echo "begin = \$begin"
+ipfs pin remote add --service=my_pin "\$cb32"
+end=\$(date)
+echo "done: https://\$cb32.ipfs.dweb.link/"
+echo "end = \$end"
+EOF
+
+# s3 cli = faster pinning
+WORKDIR /root/s3
+RUN curl https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip
+RUN unzip awscliv2.zip
+RUN bash -c "./aws/install"
+
+COPY <<EOF /root/s3.sh
+# add dir
+ipfs init >>/dev/null 2>&1
+cid=\$(ipfs add -q -r /root/dist | tail -n 1)
+echo "CIDv0 = \$cid"
+cb32=\$(ipfs cid base32 "\$cid")
+echo "CIDv1 = \$cb32"
+# create .car
+ipfs dag export "\$cb32" > /root/dist.car
+# upload
+export AWS_DEFAULT_REGION=us-east-1
+export AWS_ACCESS_KEY_ID=\$pin_s3_access
+export AWS_SECRET_ACCESS_KEY=\$pin_s3_secret
+aws --endpoint \$pin_s3_api s3 cp /root/dist.car s3://\$pin_s3_bucket/\$cb32 --metadata 'import=car'
+echo "done: https://\$cb32.ipfs.dweb.link"
+EOF
+
+# storacha cli = fast pin w/ gateway
+WORKDIR /root/js
+ENV NVM_DIR=/root/js/.nvm
+RUN git clone --depth 1 --branch v0.40.1 https://github.com/nvm-sh/nvm nvm
+RUN cd nvm && . ./nvm.sh && nvm install 20.11.1
+ENV PATH="/root/js/.nvm/versions/node/v20.11.1/bin:$PATH"
+RUN node -v && npx -y @web3-storage/w3cli@7.12.0 -v
+
+COPY <<EOF /root/storacha.sh
+# login
+if [ ! -f "/root/.config/w3access/w3cli.json" ]; then
+  npx @web3-storage/w3cli@7.12.0 login "\$pin_storacha_email"
+fi
+npx @web3-storage/w3cli@7.12.0 space use "\$pin_storacha_space"
+# add dir
+ipfs init >>/dev/null 2>&1
+cid=\$(ipfs add -q -r /root/dist | tail -n 1)
+echo "CIDv0 = \$cid"
+cb32=\$(ipfs cid base32 "\$cid")
+echo "CIDv1 = \$cb32"
+# create .car
+ipfs dag export "\$cb32" > /root/dist.car
+# upload
+npx @web3-storage/w3cli@7.12.0 up -c /root/dist.car
+echo "done: https://\$cb32.ipfs.dweb.link"
+EOF
+
+COPY <<EOF /root/cmd.sh
+if [[ -v pin_api ]]; then
+    bash -c "/root/ipfs.sh"
+    echo ""
+fi
+if [[ -v pin_s3_api ]]; then
+    bash -c "/root/s3.sh"
+    echo ""
+fi
+if [[ -v pin_storacha_email ]]; then
+    bash -c "/root/storacha.sh"
+fi
+EOF
+
+RUN chmod +x /root/ipfs.sh
+RUN chmod +x /root/s3.sh
+RUN chmod +x /root/storacha.sh
+RUN chmod +x /root/cmd.sh
+
+CMD ["bash", "-c", "/root/cmd.sh"]
