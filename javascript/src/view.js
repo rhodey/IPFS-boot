@@ -93,7 +93,7 @@ module.exports = function main(state, emit) {
     return empty()
   } else if (!background && error) {
     return bootError(state, emit)
-  } else if (!version) { // first boot
+  } else if (!background && !version) { // first boot
     return bootList(state, emit)
   } else if (!background || selected) { // user wants list
     return bootList(state, emit)

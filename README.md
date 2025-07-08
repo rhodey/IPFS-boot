@@ -57,8 +57,8 @@ sha256sum dist/nitro_wasm.wasm
 
 ## Where is demo
 Please if you want to style the default bootloader, open a PR ^.^
-+ react https://bafybeigkumkrlluztewqazarogyrnbd53vx72ono2kazmjbgtpsxmbgky4.ipfs.dweb.link
-+ choo https://bafybeidnlw5o2bkui6s7ldqlcffrctem3ptf5gsez4fyditqkwmhuehao4.ipfs.dweb.link
++ react https://bafybeiguynsoc3zlpc3bvf2c6zdvygelzzzrsozm7uc4ayjrthy6ncqitm.ipfs.dweb.link
++ choo https://bafybeibzqbo2lauqko2e2jwbwf6zdewzsatxm7t33crzygq6sj75ykecbq.ipfs.dweb.link
 
 ## FAQ
 [FAQ](https://github.com/rhodey/IPFS-boot/blob/master/FAQ.md)
