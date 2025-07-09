@@ -8,8 +8,7 @@ function timeout(ms) {
 
 const noop = () => {}
 
-// todo: ?? abort signal
-module.exports = function fetchWithTimeout(request, timeoutms=10_000) {
+module.exports = function fetchWithTimeout(request, timeoutms=15_000) {
   if (typeof request === 'string') { request = new Request(request) }
   if (!(request instanceof Request)) { return Promise.reject(new Error('fetch accepts url or instance of Request')) }
   let info = null

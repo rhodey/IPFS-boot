@@ -75,9 +75,8 @@ function store(statee, emitter) {
     emitter.emit('render')
   }
 
-
-  const overrideBoot = async () => {
-    console.log('override boot')
+  const showBootList = async () => {
+    console.log('boot list')
     // add app boot style
     if (state.version) {
       const index = getIndexUrl(state.version.cid)
@@ -94,7 +93,7 @@ function store(statee, emitter) {
       storage.verifyHistory(remote, state.local)
       state.remote = remote
     } catch (err) {
-      console.log('override boot error', err)
+      console.log('boot list error', err)
       state.local = storage.versions()
     }
     state.loading = false
@@ -121,7 +120,7 @@ function store(statee, emitter) {
     state.version = storage.version()
     if (!state.version) { return firstBoot() }
     const hash = window.location.hash
-    if (hash === '#boot') { return overrideBoot() }
+    if (hash === '#boot') { return showBootList() }
     return resume()
   }
 
@@ -239,7 +238,7 @@ function store(statee, emitter) {
     port = port ? `:${port}` : ''
     const ipfsCompanion = host[0] === 'ipfs' && host.pop() === 'localhost'
     if (ipfsCompanion) { return `http://${cid}.ipfs.localhost${port}/index.html` }
-    // use gateway if already in use else use a default
+    // use gateway if already in use else use default gateway
     const gateways = [`ipfs.dweb.link`, `ipfs.w3s.link`]
     host = document.location.hostname.split('.').slice(1)
     const gateway = host[0] === 'ipfs' ? host.join('.') : gateways[0]
@@ -310,7 +309,7 @@ function store(statee, emitter) {
     emitter.emit('render')
   })
 
-  emitter.on('override', () => {
+  emitter.on('show', () => {
     state.background && unloadApp()
     state.background = false
     emitter.emit('render')
@@ -341,7 +340,7 @@ const choo = chooo()
 
 window.addEventListener('hashchange', (event) => {
   if (window.location.hash !== '#boot') { return }
-  choo.emit('override')
+  choo.emit('show')
 })
 
 // todo: remove for prod

@@ -23,10 +23,10 @@ Read [the guide](https://github.com/rhodey/IPFS-boot/blob/master/PIN.md) on choo
 cp example.env .env
 docker buildx build --platform=linux/amd64 -f Dockerfile.pin -t ipfs-pin .
 docker run --rm -i --platform=linux/amd64 -v ./dist:/root/dist --env-file .env ipfs-pin
-> CIDv0 = QmSD7UYScBkabPAp9W7xCgtPC4ddvsWt7Ts3rWXRyx9ya3
-> CIDv1 = bafybeibzqbo2lauqko2e2jwbwf6zdewzsatxm7t33crzygq6sj75ykecbq
-> upload: ../dist.car to s3://bucket-name/bafybeibzqbo2lauqko2e2jwbwf6zdewzsatxm7t33crzygq6sj75ykecbq
-> done: https://bafybeibzqbo2lauqko2e2jwbwf6zdewzsatxm7t33crzygq6sj75ykecbq.ipfs.dweb.link
+> CIDv0 = QmTSfk5dc1M63qgwaTowQUUXV2UincuBoAPDEQM2DFLkyP
+> CIDv1 = bafybeicl2ullgshkftj4xy3q5rcxptg6sv3v4rhvyqvhvc6slv7cdno6ni
+> upload: ../dist.car to s3://bucket-name/bafybeicl2ullgshkftj4xy3q5rcxptg6sv3v4rhvyqvhvc6slv7cdno6ni
+> done: https://bafybeicl2ullgshkftj4xy3q5rcxptg6sv3v4rhvyqvhvc6slv7cdno6ni.ipfs.dweb.link
 ```
 
 Your bootloader is now live and discoverable with v0 and v1 CIDs, see [gateways](https://ipfs.github.io/public-gateway-checker/)
@@ -59,8 +59,8 @@ Please if you want to style the default bootloader, open a PR ^.^
 
 If you clicked "boot!" without reading: you can return to boot list anytime by add #boot to the url
 
-+ react https://bafybeiguynsoc3zlpc3bvf2c6zdvygelzzzrsozm7uc4ayjrthy6ncqitm.ipfs.dweb.link
-+ choo https://bafybeibzqbo2lauqko2e2jwbwf6zdewzsatxm7t33crzygq6sj75ykecbq.ipfs.dweb.link
++ react https://bafybeicsc2oep22nalyt5dbsjioqb2mvg5ma2ih3igx3v2xfkpaws7shrm.ipfs.dweb.link
++ choo https://bafybeicl2ullgshkftj4xy3q5rcxptg6sv3v4rhvyqvhvc6slv7cdno6ni.ipfs.dweb.link
 
 ## FAQ
 [FAQ](https://github.com/rhodey/IPFS-boot/blob/master/FAQ.md)
