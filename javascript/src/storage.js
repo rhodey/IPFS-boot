@@ -10,9 +10,12 @@ function verifyHistory(remote, local) {
   const localLatest = local[local.length - 1]
   const idx = remote.findIndex((e) => equal(e, localLatest))
 
+  ok = (idx + 1) === local.length
+  if (!ok) { throw new Error('remote is trying to add versions into the past') }
+
   remote = remote.slice(idx + 1)
   ok = remote.every((r) => r.timems > localLatest.timems)
-  if (!ok) { throw new Error('remote is trying to alter past versions') }
+  if (!ok) { throw new Error('remote is trying to add versions into the past') }
 }
 
 function versions(versions) {

@@ -92,3 +92,20 @@ test('test remote does not have first local', (t) => {
     t.pass('ok')
   }
 })
+
+test('test remote has middle missing from local', (t) => {
+  t.plan(1)
+  const remote = [rand(), rand(), rand()]
+  const a = rand()
+  const b = rand()
+  const local = [...remote, b]
+  remote.push(a)
+  remote.push(b)
+
+  try {
+    storage.verifyHistory(remote, local)
+    t.fail('no error')
+  } catch (err) {
+    t.pass('ok')
+  }
+})
