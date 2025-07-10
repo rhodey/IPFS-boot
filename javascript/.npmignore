@@ -2,6 +2,7 @@
 *.swp
 
 index.html
+src/vfetch.js
 test/
 
 dist/

@@ -4,6 +4,8 @@ const fetch = require('./fetch.js')
 const storage = require('./storage.js')
 // require('./attest.js')
 
+const { verifiedFetch: vfetch, createVerifiedFetch } = require('./vfetch.js')
+
 // todo: better value for prod
 const updateInterval = 10_000
 
@@ -232,17 +234,8 @@ function store(statee, emitter) {
   const getIndexUrl = (cid) => {
     // opera, etc
     if (document.location.href.startsWith('ipfs://')) { return `ipfs://${cid}/index.html` }
-    // ipfs companion browser extension
-    let host = document.location.hostname.split('.').slice(1)
-    let port = document.location.port
-    port = port ? `:${port}` : ''
-    const ipfsCompanion = host[0] === 'ipfs' && host.pop() === 'localhost'
-    if (ipfsCompanion) { return `http://${cid}.ipfs.localhost${port}/index.html` }
-    // use gateway if already in use else use default gateway
-    const gateways = [`ipfs.dweb.link`, `ipfs.w3s.link`]
-    host = document.location.hostname.split('.').slice(1)
-    const gateway = host[0] === 'ipfs' ? host.join('.') : gateways[0]
-    return `https://${cid}.${gateway}/index.html`
+    // use gateway (will be intercepted by sw.js)
+    return `https://${cid}.ipfs.dweb.link/index.html`
   }
 
   const fetchVersion = async (cid) => {
@@ -352,6 +345,13 @@ document.addEventListener('keydown', (event) => {
   state.local.pop()
   choo.emit('render')
 })
+
+// try service worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js')
+    .then((reg) => console.log('sw init'))
+    .catch((err) => console.log('sw error', err))
+}
 
 interceptListeners()
 choo.use(devtools())

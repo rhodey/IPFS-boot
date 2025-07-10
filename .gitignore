@@ -1,6 +1,8 @@
 .env*
 *.swp
 
+javascript/src/vfetch.js
+
 dist/
 
 javascript/dist
