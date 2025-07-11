@@ -59,8 +59,8 @@ Please if you want to style the default bootloader, open a PR ^.^
 
 If you clicked "boot!" without reading: you can return to boot list anytime by add #boot to the url
 
-+ react https://bafybeihcqtpfl5cvfalx3jhxz6hqqc5iy4kxf5k6gysiavnlyo7jgcwwfa.ipfs.dweb.link
-+ choo https://bafybeicfrkfdmcazazpchhdhbjzxsck6dpm7xov5krnk2u72vof2rv4tt4.ipfs.dweb.link
++ react https://bafybeidmexqdlzf3z7jl2hxlqtv4opsnucauiit6dumusiial2xkfoomwm.ipfs.dweb.link
++ choo https://bafybeif4ulbypq5meh27m3nkiervz3gi5iubgm4md6sgzltwfzxtlahpau.ipfs.dweb.link
 
 ## FAQ
 [FAQ](https://github.com/rhodey/IPFS-boot/blob/master/FAQ.md)
