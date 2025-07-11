@@ -220,7 +220,7 @@ function store(statee, emitter) {
   const getCidUrl = (cid) => {
     // opera, etc
     if (document.location.href.startsWith('ipfs://')) { return `ipfs://${cid}` }
-    // ipfs companion browser extension
+    // ipfs companion extension
     let host = document.location.hostname.split('.').slice(1)
     let port = document.location.port
     port = port ? `:${port}` : ''
