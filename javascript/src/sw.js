@@ -5,12 +5,15 @@ const cacheName = 'ipfsboot'
 // todo: any files you add go here
 const cacheAssets = ['/', '/sw.js', '/bundle.js', '/assets/favicon.png', '/assets/style.css']
 
+// dont cache bootloader files while using dev server
+const isDev = DEV === true
+
 const pathGatewayRegex = /^.*\/(?<protocol>ip[fn]s)\/(?<cidOrPeerIdOrDnslink>[^/?#]*)(?<path>.*)$/
 const subdomainGatewayRegex = /^(?:https?:\/\/|\/\/)?(?<cidOrPeerIdOrDnslink>[^/]+)\.(?<protocol>ip[fn]s)\.(?<parentDomain>[^/?#]*)(?<path>.*)$/
 
 self.addEventListener('install', (event) => {
   console.log('sw install')
-  event.waitUntil(
+  !isDev && event.waitUntil(
     caches.open(cacheName)
       .then((cache) => cache.addAll(cacheAssets))
   )
@@ -45,6 +48,7 @@ const cacheFirst = async (req, event, gateway) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url)
   const selff = url.href.startsWith(self.location.origin)
+  if (selff && isDev) { return }
   const gateway = selff ? null : (url.href.match(pathGatewayRegex) ?? url.href.match(subdomainGatewayRegex))
   if (!selff && !gateway?.groups) { return }
   const doIndex = selff && !cacheAssets.includes(url.pathname)
