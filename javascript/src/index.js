@@ -232,6 +232,12 @@ function store(statee, emitter) {
   const getIndexUrl = (cid) => {
     // opera, etc
     if (document.location.href.startsWith('ipfs://')) { return `ipfs://${cid}/index.html` }
+    // ipfs companion browser extension
+    let host = document.location.hostname.split('.').slice(1)
+    let port = document.location.port
+    port = port ? `:${port}` : ''
+    const ipfsCompanion = host[0] === 'ipfs' && host.pop() === 'localhost'
+    if (ipfsCompanion) { return `http://${cid}.ipfs.localhost${port}/index.html` }
     // use gateway (will be intercepted by sw.js)
     return `https://${cid}.ipfs.dweb.link/index.html`
   }
