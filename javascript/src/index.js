@@ -85,7 +85,8 @@ function store(statee, emitter) {
     if (state.version) {
       // custom boot style
       const base = getCidUrl(state.version.cid)
-      const style = await fetchAndFixPaths(style, base + '/_static/boot.css').catch((err) => '')
+      let style = base + '/_static/boot.css'
+      style = await fetchAndFixPaths(style, base).catch((err) => '')
       addBootStyle(style)
     }
     try {
