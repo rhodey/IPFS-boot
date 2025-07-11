@@ -17,9 +17,8 @@
     "postpublish": "mv README.md bin.md",
     "copy": "cp -R index.html assets dist/ && mv dist/assets/nitro_wasm* dist/ && mv dist/assets/_redirects dist/_redirects",
     "mini": "terser dist/bundle.js --compress --output dist/bundle.js",
-    "cjs": "esbuild --bundle node_modules/@helia/verified-fetch/dist/index.min.js --target=es2020 --format=cjs --outfile=src/vfetch.js",
-    "sworker": "npm run cjs && browserify src/sw.js -o dist/sw.js",
-    "build": "npm run sworker && browserify src/index.js -o dist/bundle.js && npm run mini && npm run copy",
+    "sw": "esbuild src/sw.js --bundle --minify --outfile=dist/sw.js",
+    "build": "npm run sw && browserify src/index.js -o dist/bundle.js && npm run mini && npm run copy",
     "dev": "npm run build && bhr src/index.js index.html assets/ -o dist/bundle.js"
   },
   "dependencies": {

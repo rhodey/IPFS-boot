@@ -1,4 +1,4 @@
-const { verifiedFetch, createVerifiedFetch } = require('./vfetch.js')
+import { verifiedFetch } from '@helia/verified-fetch'
 
 const pathGatewayRegex = /^.*\/(?<protocol>ip[fn]s)\/(?<cidOrPeerIdOrDnslink>[^/?#]*)(?<path>.*)$/
 
