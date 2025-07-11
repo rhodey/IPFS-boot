@@ -1,8 +1,8 @@
-import { verifiedFetch } from '@helia/verified-fetch'
+import { createVerifiedFetch } from '@helia/verified-fetch'
 
 const cacheName = 'ipfsboot'
 
-// todo: any files you add go here
+// todo: offline files go here
 const cacheAssets = ['/', '/sw.js', '/bundle.js', '/assets/favicon.png', '/assets/style.css']
 
 // dont cache bootloader files while using dev server
@@ -25,6 +25,18 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim())
 })
 
+// try to load fast by send to multi gateways
+const gateways = ['https://trustless-gateway.link', 'https://gateway.pinata.cloud', 'https://dweb.link']
+
+gateways
+  .map((url) => createVerifiedFetch({ gateways: [url] }))
+  .map((p, idx) => p.then((vfetch) => gateways[idx] = vfetch))
+
+const fetchMulti = (url) => {
+  const works = gateways.map((vfetch) => vfetch(url))
+  return Promise.any(works)
+}
+
 const putInCache = async (req, res) => {
   const cache = await caches.open(cacheName)
   await cache.put(req, res)
@@ -39,7 +51,7 @@ const cacheFirst = async (req, event, gateway) => {
     console.log('sw intercept', protocol, cid, path)
     url = `${protocol}://${cid}/${path}`
   }
-  const fn = gateway ? verifiedFetch : fetch
+  const fn = gateway ? fetchMulti : fetch
   const ok = await fn(url)
   ok.ok && event.waitUntil(putInCache(req, ok.clone()))
   return ok
