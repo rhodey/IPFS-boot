@@ -4,8 +4,6 @@ const fetch = require('./fetch.js')
 const storage = require('./storage.js')
 // require('./attest.js')
 
-const { verifiedFetch: vfetch, createVerifiedFetch } = require('./vfetch.js')
-
 // todo: better value for prod
 const updateInterval = 10_000
 
