@@ -27,28 +27,32 @@ function store(statee, emitter) {
   state.selected = null
 
   // avoid xss
-  const safe = (str) => {
-    const doc = new DOMParser().parseFromString(str, 'text/html')
+  const safe = (val) => {
+    const doc = new DOMParser().parseFromString('' + val, 'text/html')
     return doc.body.textContent || ''
   }
 
   const fetchVersions = (timeout) => {
     return fetch(versionsUrl, timeout).then((res) => res.json()).then((json) => {
-      if (typeof json?.repo !== 'string') {
+      if (typeof json?.name !== 'string') {
+        throw new Error('remote versions invalid')
+      } else if (typeof json?.repo !== 'string') {
         throw new Error('remote versions invalid')
       } else if (!Array.isArray(json?.arr)) {
         throw new Error('remote versions invalid')
       } else if (json.arr.length <= 0) {
         throw new Error('remote versions length 0')
       }
-      state.name = safe(json.name)
-      state.repo = safe(json.repo)
+      json.name = safe(json.name)
+      json.repo = safe(json.repo)
       json.arr.forEach((e) => {
         e.cid = safe(e.cid)
         e.version = safe(e.version)
         e.notes = safe(e.notes)
+        e.timems = parseInt(e.timems)
       })
-      return json.arr.sort((a, b) => a.timems - b.timems)
+      json.arr.sort((a, b) => a.timems - b.timems)
+      return json
     })
   }
 
@@ -57,10 +61,28 @@ function store(statee, emitter) {
     history.replaceState(null, document.title, window.location.pathname + window.location.search)
   }
 
+  const loadLocal = () => {
+    const local = storage.versions()
+    if (!local) { return }
+    state.name = local.name
+    state.repo = local.repo
+    state.local = local.arr
+  }
+
+  const setRemoteSafe = (remote, store=true) => {
+    const arr = Array.isArray(remote) ? remote : remote.arr
+    state.local && storage.verifyHistory(arr, state.local)
+    state.remote = arr
+    if (!store) { return }
+    state.name = remote.name ?? state.name
+    state.repo = remote.repo ?? state.repo
+    state.local = [...state.remote]
+    storage.versions({ name: state.name, repo: state.repo, arr: state.local })
+  }
+
   const checkForUpdates = () => {
     fetchVersions().then((remote) => {
-      storage.verifyHistory(remote, state.local)
-      state.remote = remote
+      setRemoteSafe(remote, false)
       if (state.remote.length === state.local.length) { return }
       // will show update notif
       emitter.emit('render')
@@ -71,9 +93,8 @@ function store(statee, emitter) {
 
   const firstBoot = async () => {
     console.log('first')
-    state.remote = await fetchVersions().catch((err) => { throw new Error(`fetch versions error - ${err.message}`) })
-    state.local = [...state.remote]
-    storage.versions(state.local)
+    const remote = await fetchVersions().catch((err) => { throw new Error(`fetch versions error - ${err.message}`) })
+    setRemoteSafe(remote)
     setInterval(checkForUpdates, updateInterval)
     state.loading = false
     // will show boot list
@@ -89,15 +110,13 @@ function store(statee, emitter) {
       style = await fetchAndFixPaths(style, base).catch((err) => '')
       addBootStyle(style)
     }
+    loadLocal()
     try {
       // app still loads if remote is down
       const remote = await fetchVersions().catch((err) => { throw new Error(`fetch versions error - ${err.message}`) })
-      state.local = storage.versions()
-      storage.verifyHistory(remote, state.local)
-      state.remote = remote
+      setRemoteSafe(remote, false)
     } catch (err) {
       console.log('list', err)
-      state.local = storage.versions()
     }
     state.loading = false
     emitter.emit('render')
@@ -105,8 +124,8 @@ function store(statee, emitter) {
 
   const resume = () => {
     console.log('resume', state.version.cid)
+    loadLocal()
     removeUrlHash()
-    state.local = storage.versions()
     setInterval(checkForUpdates, updateInterval)
     checkForUpdates()
     state.loading = false
@@ -273,10 +292,8 @@ function store(statee, emitter) {
     return boot(version).then(() => {
       const remote = state.remote ?? []
       const latest = remote[remote.length - 1]
-      if (equal(version, latest)) {
-        state.local = [...remote]
-        storage.versions(state.local)
-      }
+      if (!equal(version, latest)) { return }
+      setRemoteSafe(remote)
     }).catch((err) => {
       console.log('error', err)
       state.error = err.message
@@ -287,7 +304,7 @@ function store(statee, emitter) {
   emitter.on('bootUpdate', bootOrError)
 
   emitter.on('select', (version) => {
-    state.local = storage.versions()
+    loadLocal()
     state.background && unloadApp()
     state.background = false
     state.selected = version
@@ -296,9 +313,7 @@ function store(statee, emitter) {
   })
 
   emitter.on('dismiss', () => {
-    const remote = state.remote ?? []
-    state.local = [...remote]
-    storage.versions(state.local)
+    setRemoteSafe(state.remote)
     emitter.emit('render')
   })
 

@@ -38,7 +38,7 @@ const cacheFirst = async (req, event, gateway) => {
   }
   const fn = gateway ? verifiedFetch : fetch
   const ok = await fn(url)
-  event.waitUntil(putInCache(req, ok.clone()))
+  ok.ok && event.waitUntil(putInCache(req, ok.clone()))
   return ok
 }
 
