@@ -52,6 +52,11 @@ function store(statee, emitter) {
     })
   }
 
+  const removeUrlHash = () => {
+    if (!window.location.hash) { return }
+    history.replaceState(null, document.title, window.location.pathname + window.location.search)
+  }
+
   const checkForUpdates = () => {
     fetchVersions().then((remote) => {
       storage.verifyHistory(remote, state.local)
@@ -60,53 +65,45 @@ function store(statee, emitter) {
       // will show update notif
       emitter.emit('render')
     }).catch((err) => {
-      console.log('check updates error', err)
+      console.log('check updates', err)
     })
   }
 
   const firstBoot = async () => {
-    console.log('first boot')
+    console.log('first')
     state.remote = await fetchVersions().catch((err) => { throw new Error(`fetch versions error - ${err.message}`) })
     state.local = [...state.remote]
     storage.versions(state.local)
     setInterval(checkForUpdates, updateInterval)
     state.loading = false
-    // will show list of boot options
+    // will show boot list
     emitter.emit('render')
   }
 
   const showBootList = async () => {
-    console.log('boot list')
-    // add app boot style
+    console.log('list')
     if (state.version) {
-      const index = getIndexUrl(state.version.cid)
-      let base = index.lastIndexOf('/')
-      base = index.substring(0, base)
-      let style = base + '/_static/boot.css'
-      style = fetchAndFixPaths(style, base).catch((err) => '')
-      style = await style
-      addAppBootStyle(style)
+      // custom boot style
+      const base = getCidUrl(state.version.cid)
+      const style = await fetchAndFixPaths(style, base + '/_static/boot.css').catch((err) => '')
+      addBootStyle(style)
     }
     try {
+      // app still loads if remote is down
       const remote = await fetchVersions().catch((err) => { throw new Error(`fetch versions error - ${err.message}`) })
       state.local = storage.versions()
       storage.verifyHistory(remote, state.local)
       state.remote = remote
     } catch (err) {
-      console.log('boot list error', err)
+      console.log('list', err)
       state.local = storage.versions()
     }
     state.loading = false
     emitter.emit('render')
   }
 
-  const removeUrlHash = () => {
-    if (!window.location.hash) { return }
-    history.replaceState(null, document.title, window.location.pathname + window.location.search)
-  }
-
   const resume = () => {
-    console.log('resume boot', state.version.cid)
+    console.log('resume', state.version.cid)
     removeUrlHash()
     state.local = storage.versions()
     setInterval(checkForUpdates, updateInterval)
@@ -125,9 +122,9 @@ function store(statee, emitter) {
   }
 
   emitter.on('DOMContentLoaded', () => {
-    console.log('dom loaded')
+    console.log('dom')
     start().catch((err) => {
-      console.log('start error', err)
+      console.log('start', err)
       state.error = err.message
       emitter.emit('render')
     })
@@ -150,7 +147,7 @@ function store(statee, emitter) {
       .forEach((child) => document.head.removeChild(child))
   }
 
-  const addAppBootStyle = (style) => {
+  const addBootStyle = (style) => {
     const id = '_boot_css_2'
     document.getElementById(id) && (document.getElementById(id).outerHTML = '')
     const elem = document.createElement('style')
@@ -184,7 +181,7 @@ function store(statee, emitter) {
 
     // add app boot style
     bootStyle = await bootStyle
-    addAppBootStyle(bootStyle)
+    addBootStyle(bootStyle)
 
     // add app styles
     let c = 0
@@ -219,6 +216,19 @@ function store(statee, emitter) {
     }
   }
 
+  const getCidUrl = (cid) => {
+    // opera, etc
+    if (document.location.href.startsWith('ipfs://')) { return `ipfs://${cid}` }
+    // ipfs companion browser extension
+    let host = document.location.hostname.split('.').slice(1)
+    let port = document.location.port
+    port = port ? `:${port}` : ''
+    const ipfsCompanion = host[0] === 'ipfs' && host.pop() === 'localhost'
+    if (ipfsCompanion) { return `http://${cid}.ipfs.localhost${port}` }
+    // use gateway (will be intercepted by sw.js)
+    return `https://${cid}.ipfs.dweb.link`
+  }
+
   const setSrc = (base, elem) => {
     if (elem.href) {
       elem.src = base + new URL(elem.href).pathname
@@ -229,25 +239,10 @@ function store(statee, emitter) {
     return elem
   }
 
-  const getIndexUrl = (cid) => {
-    // opera, etc
-    if (document.location.href.startsWith('ipfs://')) { return `ipfs://${cid}/index.html` }
-    // ipfs companion browser extension
-    let host = document.location.hostname.split('.').slice(1)
-    let port = document.location.port
-    port = port ? `:${port}` : ''
-    const ipfsCompanion = host[0] === 'ipfs' && host.pop() === 'localhost'
-    if (ipfsCompanion) { return `http://${cid}.ipfs.localhost${port}/index.html` }
-    // use gateway (will be intercepted by sw.js)
-    return `https://${cid}.ipfs.dweb.link/index.html`
-  }
-
   const fetchVersion = async (cid) => {
     const parser = new DOMParser()
-    const index = getIndexUrl(cid)
-    let base = index.lastIndexOf('/')
-    base = index.substring(0, base)
-    const html = await fetch(index).then((res) => res.text()).catch((err) => { throw new Error(`fetch cid index failed - ${err.message}`) })
+    const base = getCidUrl(cid)
+    const html = await fetch(base + '/index.html').then((res) => res.text()).catch((err) => { throw new Error(`fetch cid index failed - ${err.message}`) })
     const doc = parser.parseFromString(html, 'text/html')
     let head = Array.from(doc.head.childNodes).map((elem) => setSrc(base, elem))
     const styles = head.filter((elem) => elem.localName === 'link' && elem.rel === 'stylesheet')
@@ -260,13 +255,13 @@ function store(statee, emitter) {
   }
 
   const boot = (version) => {
-    console.log('boot begin', version.cid)
+    console.log('begin', version.cid)
     return fetchVersion(version.cid).then((arr) => {
       const [base, head, styles, scriptsHead, body, scriptsBody] = arr
       return swapElems(base, head, styles, scriptsHead, body, scriptsBody).then(() => {
         state.version = version
         storage.version(version)
-        console.log('boot complete', version.cid)
+        console.log('complete', version.cid)
       })
     })
   }
@@ -282,7 +277,7 @@ function store(statee, emitter) {
         storage.versions(state.local)
       }
     }).catch((err) => {
-      console.log('boot error', err)
+      console.log('error', err)
       state.error = err.message
       emitter.emit('render')
     })
@@ -350,7 +345,8 @@ document.addEventListener('keydown', (event) => {
   choo.emit('render')
 })
 
-// try service worker
+// service worker
+// app still works if fails to load
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js')
     .then((reg) => console.log('sw init'))
