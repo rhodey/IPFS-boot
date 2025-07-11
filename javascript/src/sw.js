@@ -26,7 +26,7 @@ self.addEventListener('activate', (event) => {
 })
 
 // try to load fast by send to multi gateways
-const gateways = ['https://trustless-gateway.link', 'https://gateway.pinata.cloud', 'https://dweb.link']
+const gateways = ['https://trustless-gateway.link', 'https://dweb.link']
 
 gateways
   .map((url) => createVerifiedFetch({ gateways: [url] }))
