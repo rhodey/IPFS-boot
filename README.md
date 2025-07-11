@@ -8,7 +8,7 @@ This repo contains a sort of web bootloader, you will style this repo as you lik
 
 It is intended that you share the source of your fork of IPFS-boot and IPFS-boot-react or IPFS-boot-choo. The sources allow users to build and see the IPFS CID (a hash) you publish is the same as what they get from source. The CID of IPFS-boot will be the URL of your app, the CID of each version of your app goes in versions.json, and the bootloader reads this file.
 
-The bootloader only gets published once but your app updates can include CSS which styles the bootloader. This all actually works, give it a try.
+The bootloader only gets published once but your app updates can include CSS which styles the bootloader. This all actually works, and it works offline(!), give it a try.
 
 ## Build
 The aim is reproducible builds so docker is involved
