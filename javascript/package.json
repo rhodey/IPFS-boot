@@ -1,6 +1,6 @@
 {
   "name": "ipfs-boot",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Publish IPFS webapps which require user consent to update",
   "license": "MIT",
   "repository": {
@@ -17,8 +17,10 @@
     "postpublish": "mv README.md bin.md",
     "copy": "cp -R index.html assets dist/ && mv dist/assets/nitro_wasm* dist/ && mv dist/assets/_redirects dist/_redirects",
     "mini": "terser dist/bundle.js --compress --output dist/bundle.js",
-    "build": "browserify src/index.js -o dist/bundle.js && npm run mini && npm run copy",
-    "dev": "npm run build && bhr src/index.js index.html assets/ -o dist/bundle.js"
+    "swprod": "esbuild src/sw.js --bundle --minify --outfile=dist/sw.js --define:DEV=\"false\"",
+    "swdev": "esbuild src/sw.js --bundle --minify --outfile=dist/sw.js --define:DEV=\"true\"",
+    "build": "npm run swprod && browserify src/index.js -o dist/bundle.js && npm run mini && npm run copy",
+    "dev": "npm run swdev && bhr src/index.js index.html assets/ -o dist/bundle.js"
   },
   "dependencies": {
     "minimist": "^1.2.0"
@@ -26,17 +28,17 @@
   "devDependencies": {
     "choo": "^7.1.0",
     "choo-devtools": "^3.0.4",
-    "debounce": "^2.1.0",
+    "@helia/verified-fetch": "^3.2.0",
     "browserify": "^17.0.0",
-    "browserify-hot-reload": "^1.1.1",
+    "browserify-hot-reload": "^1.2.1",
+    "esbuild": "^0.25.6",
     "terser": "^5.43.1",
     "tape": "4.6.0"
   },
   "keywords": [
-    "ipfs",
-    "update",
+    "ipfs", "boot",
     "bootloader",
-    "hash",
+    "crypto",
     "p2p"
   ]
 }

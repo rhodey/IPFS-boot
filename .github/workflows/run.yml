@@ -1,4 +1,4 @@
-name: Run build
+name: Run
 
 on:
   push:
@@ -12,11 +12,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    outputs:
-      sha256_wasm: ${{ steps.build_wasm.outputs.sha256_wasm }}
-      sha256_js: ${{ steps.build_wasm.outputs.sha256_js }}
-      cidv0: ${{ steps.build_webapp.outputs.cidv0 }}
-      cidv1: ${{ steps.build_webapp.outputs.cidv1 }}
     steps:
       - uses: actions/checkout@v4
       - name: Install node
@@ -24,7 +19,7 @@ jobs:
         with:
           node-version: '20.x'
 
-      - name: Run node tests
+      - name: Node tests
         run: |
           npm --prefix javascript/ install
           npm --prefix javascript/ run test
@@ -82,3 +77,47 @@ jobs:
         with:
           name: dist
           path: dist/
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        id: build
+        run: |
+          docker buildx build --platform=linux/amd64 -t ipfs-boot .
+          docker run --rm -i --platform=linux/amd64 -v ./dist:/root/dist ipfs-boot | tee out.txt
+
+      - name: Check CIDv0
+        run: |
+          a=$(cat out.txt | grep CIDv0 | awk '{print $3}')
+          b=$(cat README.md | grep CIDv0 | awk '{print $4}')
+          bash -c '[ "$a" == "$b" ]' || exit 1
+          echo "CIDv0 ok"
+          echo "$a $b"
+
+      - name: Check CIDv1
+        run: |
+          a=$(cat out.txt | grep CIDv1 | awk '{print $3}')
+          b=$(cat README.md | grep CIDv1 | awk '{print $4}')
+          bash -c '[ "$a" == "$b" ]' || exit 1
+          echo "CIDv1 ok"
+          echo "$a $b"
+
+      - name: Check Href 1
+        run: |
+          a=$(cat README.md | grep dweb.link | grep done | awk '{print $3}')
+          b=$(cat out.txt | grep CIDv1 | awk '{print $3}')
+          b="https://$b.ipfs.dweb.link"
+          bash -c '[ "$a" == "$b" ]' || exit 1
+          echo "Href 1 ok"
+          echo "$a $b"
+
+      - name: Check Href 2
+        run: |
+          a=$(cat README.md | grep dweb.link | grep choo | awk '{print $3}')
+          b=$(cat out.txt | grep CIDv1 | awk '{print $3}')
+          b="https://$b.ipfs.dweb.link"
+          bash -c '[ "$a" == "$b" ]' || exit 1
+          echo "Href 2 ok"
+          echo "$a $b"

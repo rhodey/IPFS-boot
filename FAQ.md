@@ -21,7 +21,7 @@ The HTML and CSS which IPFS-boot uses can be seen in [javascript/src/view.js](ht
 Include in your update /_static/boot.css with rules which target the HTML elements
 
 ### What to do before prod
-Search [javascript/src/index.js](https://github.com/rhodey/IPFS-boot/blob/master/javascript/src/index.js) for todo:, there are like three
+Search [javascript/src/index.js](https://github.com/rhodey/IPFS-boot/blob/master/javascript/src/index.js) and [javascript/src/sw.js](https://github.com/rhodey/IPFS-boot/blob/master/javascript/src/sw.js) for "todo"
 
 ### Downsides
 This could have been figured out sooner!

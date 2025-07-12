@@ -8,7 +8,7 @@ This repo contains a sort of web bootloader, you will style this repo as you lik
 
 It is intended that you share the source of your fork of IPFS-boot and IPFS-boot-react or IPFS-boot-choo. The sources allow users to build and see the IPFS CID (a hash) you publish is the same as what they get from source. The CID of IPFS-boot will be the URL of your app, the CID of each version of your app goes in versions.json, and the bootloader reads this file.
 
-The bootloader only gets published once but your app updates can include CSS which styles the bootloader. This all actually works, give it a try.
+The bootloader only gets published once but your app updates can include CSS which styles the bootloader. This all actually works, and it works offline(!), give it a try.
 
 ## Build
 The aim is reproducible builds so docker is involved
@@ -23,10 +23,10 @@ Read [the guide](https://github.com/rhodey/IPFS-boot/blob/master/PIN.md) on choo
 cp example.env .env
 docker buildx build --platform=linux/amd64 -f Dockerfile.pin -t ipfs-pin .
 docker run --rm -i --platform=linux/amd64 -v ./dist:/root/dist --env-file .env ipfs-pin
-> CIDv0 = QmTSfk5dc1M63qgwaTowQUUXV2UincuBoAPDEQM2DFLkyP
-> CIDv1 = bafybeicl2ullgshkftj4xy3q5rcxptg6sv3v4rhvyqvhvc6slv7cdno6ni
-> upload: ../dist.car to s3://bucket-name/bafybeicl2ullgshkftj4xy3q5rcxptg6sv3v4rhvyqvhvc6slv7cdno6ni
-> done: https://bafybeicl2ullgshkftj4xy3q5rcxptg6sv3v4rhvyqvhvc6slv7cdno6ni.ipfs.dweb.link
+> CIDv0 = QmSZhisqURkj49tSw8FWxfPATb7CFZTNgtBMZeRW169Fma
+> CIDv1 = bafybeib6y22jev7ajjjdwg4brw6xhncs5ijjcn3tdx73iwbzefmkyxx24e
+> upload: ../dist.car to s3://bucket-name/bafybeib6y22jev7ajjjdwg4brw6xhncs5ijjcn3tdx73iwbzefmkyxx24e
+> done: https://bafybeib6y22jev7ajjjdwg4brw6xhncs5ijjcn3tdx73iwbzefmkyxx24e.ipfs.dweb.link
 ```
 
 Your bootloader is now live and discoverable with v0 and v1 CIDs, see [gateways](https://ipfs.github.io/public-gateway-checker/)
@@ -59,8 +59,8 @@ Please if you want to style the default bootloader, open a PR ^.^
 
 If you clicked "boot!" without reading: you can return to boot list anytime by add #boot to the url
 
-+ react https://bafybeicsc2oep22nalyt5dbsjioqb2mvg5ma2ih3igx3v2xfkpaws7shrm.ipfs.dweb.link
-+ choo https://bafybeicl2ullgshkftj4xy3q5rcxptg6sv3v4rhvyqvhvc6slv7cdno6ni.ipfs.dweb.link
++ react https://bafybeidrgpkjit2lyvido5nv2niw3vfgcp3jvrtewbqxrvghdvbkl6wv4e.ipfs.dweb.link
++ choo https://bafybeib6y22jev7ajjjdwg4brw6xhncs5ijjcn3tdx73iwbzefmkyxx24e.ipfs.dweb.link
 
 ## FAQ
 [FAQ](https://github.com/rhodey/IPFS-boot/blob/master/FAQ.md)
