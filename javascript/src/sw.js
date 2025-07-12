@@ -1,3 +1,4 @@
+import { httpGatewayRouting } from '@helia/routers'
 import { createVerifiedFetch } from '@helia/verified-fetch'
 
 const cacheName = 'ipfsboot'
@@ -25,15 +26,35 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim())
 })
 
-// try to load fast by send to multi gateways
-const gateways = ['https://trustless-gateway.link', 'https://dweb.link']
+// todo: replace with your filebase gateway
+let fast = 'https://medieval-silver-salmon.myfilebase.com'
+createVerifiedFetch({ gateways: [fast], routers: [] })
+  .then((vfetch) => fast = vfetch)
 
-gateways
-  .map((url) => createVerifiedFetch({ gateways: [url] }))
-  .map((p, idx) => p.then((vfetch) => gateways[idx] = vfetch))
+// default gateways as fallbacks
+const slow = ['https://trustless-gateway.link', 'https://dweb.link']
+slow.map((url, idx) => {
+  createVerifiedFetch({ gateways: [url] })
+    .then((vfetch) => slow[idx] = vfetch)
+})
 
+// accept success from any and reject if all reject
 const fetchMulti = (url) => {
-  const works = gateways.map((vfetch) => vfetch(url))
+  const okOrThrow = (res) => {
+    if (res.ok || res.status === 404) { return res }
+    return Promise.reject(res)
+  }
+
+  const works = []
+  const ctrl = new AbortController()
+  works.push(fast(url).then(okOrThrow).then((ok) => {
+    ctrl.abort()
+    return ok
+  }))
+
+  const { signal } = ctrl
+  const sloww = Math.random() >= 0.5 ? slow[0] : slow[1]
+  works.push(sloww(url, { signal }).then(okOrThrow))
   return Promise.any(works)
 }
 
