@@ -23,10 +23,10 @@ Read [the guide](https://github.com/rhodey/IPFS-boot/blob/master/PIN.md) on choo
 cp example.env .env
 docker buildx build --platform=linux/amd64 -f Dockerfile.pin -t ipfs-pin .
 docker run --rm -i --platform=linux/amd64 -v ./dist:/root/dist --env-file .env ipfs-pin
-> CIDv0 = QmTSfk5dc1M63qgwaTowQUUXV2UincuBoAPDEQM2DFLkyP
-> CIDv1 = bafybeicl2ullgshkftj4xy3q5rcxptg6sv3v4rhvyqvhvc6slv7cdno6ni
-> upload: ../dist.car to s3://bucket-name/bafybeicl2ullgshkftj4xy3q5rcxptg6sv3v4rhvyqvhvc6slv7cdno6ni
-> done: https://bafybeicl2ullgshkftj4xy3q5rcxptg6sv3v4rhvyqvhvc6slv7cdno6ni.ipfs.dweb.link
+> CIDv0 = QmTXcizHzttdXcutMjWYajyUD3GTMHfzLnkMdCzX1BCLSP
+> CIDv1 = bafybeicndgke4oomb6vzaqoneqsidanxv4vwx5i3hngtmfbw6ck6oxl6yq
+> upload: ../dist.car to s3://bucket-name/bafybeicndgke4oomb6vzaqoneqsidanxv4vwx5i3hngtmfbw6ck6oxl6yq
+> done: https://bafybeicndgke4oomb6vzaqoneqsidanxv4vwx5i3hngtmfbw6ck6oxl6yq.ipfs.dweb.link
 ```
 
 Your bootloader is now live and discoverable with v0 and v1 CIDs, see [gateways](https://ipfs.github.io/public-gateway-checker/)
