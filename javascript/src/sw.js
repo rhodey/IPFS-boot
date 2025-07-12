@@ -57,13 +57,22 @@ const cacheFirst = async (req, event, gateway) => {
   return ok
 }
 
+const isIpfsCompanion = (url) => {
+  let host = url.hostname.split('.').slice(1)
+  let port = url.port
+  port = port ? `:${port}` : ''
+  return host[0] === 'ipfs' && host.pop() === 'localhost'
+}
+
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url)
   const selff = url.href.startsWith(self.location.origin)
   if (selff && isDev) { return }
-  const gateway = selff ? null : (url.href.match(pathGatewayRegex) ?? url.href.match(subdomainGatewayRegex))
+  let gateway = selff ? null : (url.href.match(pathGatewayRegex) ?? url.href.match(subdomainGatewayRegex))
   if (!selff && !gateway?.groups) { return }
   const doIndex = selff && !cacheAssets.includes(url.pathname)
   if (doIndex) { return event.respondWith(caches.match('/')) }
-  event.respondWith(cacheFirst(event.request, event, gateway?.groups))
+  const ipfs = isIpfsCompanion(url)
+  gateway = ipfs ? null : gateway?.groups
+  event.respondWith(cacheFirst(event.request, event, gateway))
 })
