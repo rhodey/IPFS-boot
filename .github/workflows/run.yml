@@ -92,7 +92,7 @@ jobs:
         run: |
           a=$(cat out.txt | grep CIDv0 | awk '{print $3}')
           b=$(cat README.md | grep CIDv0 | awk '{print $4}')
-          bash -c '[ "$a" == "$b" ]' || exit 1
+          bash -c "[ "$a" == "$b" ]" || exit 1
           echo "CIDv0 ok"
           echo "$a $b"
 
@@ -100,7 +100,7 @@ jobs:
         run: |
           a=$(cat out.txt | grep CIDv1 | awk '{print $3}')
           b=$(cat README.md | grep CIDv1 | awk '{print $4}')
-          bash -c '[ "$a" == "$b" ]' || exit 1
+          bash -c "[ "$a" == "$b" ]" || exit 1
           echo "CIDv1 ok"
           echo "$a $b"
 
@@ -109,7 +109,7 @@ jobs:
           a=$(cat README.md | grep dweb.link | grep done | awk '{print $3}')
           b=$(cat out.txt | grep CIDv1 | awk '{print $3}')
           b="https://$b.ipfs.dweb.link"
-          bash -c '[ "$a" == "$b" ]' || exit 1
+          bash -c "[ "$a" == "$b" ]" || exit 1
           echo "Href 1 ok"
           echo "$a $b"
 
@@ -118,6 +118,6 @@ jobs:
           a=$(cat README.md | grep dweb.link | grep choo | awk '{print $3}')
           b=$(cat out.txt | grep CIDv1 | awk '{print $3}')
           b="https://$b.ipfs.dweb.link"
-          bash -c '[ "$a" == "$b" ]' || exit 1
+          bash -c "[ "$a" == "$b" ]" || exit 1
           echo "Href 2 ok"
           echo "$a $b"
