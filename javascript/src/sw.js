@@ -48,7 +48,7 @@ const verifiedFetchMulti = (url) => {
     return Promise.reject(res)
   }
   let aborts = []
-  const go = (fetch) => {
+  const go = (vfetch) => {
     const ctrl = new AbortController()
     aborts.push(ctrl)
     const abort = () => {
@@ -56,7 +56,7 @@ const verifiedFetchMulti = (url) => {
       aborts = []
     }
     const { signal } = ctrl
-    return fetch(url, { signal }).then(okOr404).then((ok) => {
+    return vfetch(url, { signal }).then(okOr404).then((ok) => {
       abort()
       return ok
     })
