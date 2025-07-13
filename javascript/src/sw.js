@@ -26,7 +26,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim())
 })
 
-// todo: replace with your cloudflare bucket
+// todo: replace with your cloudflare bucket (or worker)
 // todo: if no cloudflare bucket replace with empty array
 const fast = ['https://ipfs.lock.host']
 fast.map((url, idx) => {
