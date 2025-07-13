@@ -5,7 +5,6 @@ build:
     {{sudo}} docker run --rm -i --platform=linux/amd64 -v ./dist:/root/dist ipfs-boot
 
 pin:
-    {{sudo}} docker buildx build --platform=linux/amd64 -f Dockerfile.pin -t ipfs-pin .
     {{sudo}} docker run --rm -i --platform=linux/amd64 -v /tmp/w3access:/root/.config/w3access -v ./dist:/root/dist --env-file .env ipfs-pin
 
 wasm:
