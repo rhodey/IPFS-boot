@@ -28,6 +28,7 @@ self.addEventListener('activate', (event) => {
 
 // todo: replace with your cloudflare worker
 let fast = 'https://ipfs-boot-cloudflare.mike-784.workers.dev'
+// let fast = 'https://pub-4fd32d27ce1042aaa420120f9934ecbb.r2.dev'
 createVerifiedFetch({ gateways: [fast], routers: [] })
   .then((vfetch) => fast = vfetch)
 
