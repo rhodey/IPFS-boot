@@ -52,7 +52,7 @@ const verifiedFetchMulti = (url) => {
     const ctrl = new AbortController()
     aborts.push(ctrl)
     const abort = () => {
-      aborts.filter((c) => c !== ctrl).forEach((c) => c.abort())
+      // aborts.filter((c) => c !== ctrl).forEach((c) => c.abort()) // avoid issue with verified fetch
       aborts = []
     }
     const { signal } = ctrl
