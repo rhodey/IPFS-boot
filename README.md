@@ -2,6 +2,7 @@
 Publish IPFS webapps which require user consent to update, see:
 + [IPFS-boot-react](https://github.com/rhodey/IPFS-boot-react)
 + [IPFS-boot-choo](https://github.com/rhodey/IPFS-boot-choo)
++ [IPFS-boot-cloudflare](https://github.com/rhodey/IPFS-boot-cloudflare)
 
 ## How this works
 This repo contains a sort of web bootloader, you will style this repo as you like and then you will publish this repo and your app to IPFS. Your app is a fork of IPFS-boot-react or IPFS-boot-choo. You will host a file versions.json on any https server and inside this file an array of items describe versions of your app which users choose from.
