@@ -3,7 +3,7 @@ import { createVerifiedFetch } from '@helia/verified-fetch'
 
 const cacheName = 'ipfsboot'
 
-// todo: offline files go here
+// offline files go here
 const cacheAssets = ['/', '/sw.js', '/bundle.js', '/assets/favicon.png', '/assets/style.css']
 
 // dont cache bootloader files when dev server running
@@ -27,17 +27,18 @@ self.addEventListener('activate', (event) => {
 })
 
 // todo: replace with your cloudflare bucket
-// let fast = 'https://ipfs-boot-cloudflare.mike-784.workers.dev'
-let fast = 'https://pub-4fd32d27ce1042aaa420120f9934ecbb.r2.dev'
-createVerifiedFetch({ gateways: [fast], routers: [] })
-  .then((vfetch) => fast = vfetch)
+// todo: if no cloudflare bucket replace with empty array
+const fast = ['https://ipfs.lock.host']
+fast.map((url, idx) => {
+  createVerifiedFetch({ gateways: [url], routers: [] })
+    .then((vfetch) => fast[idx] = vfetch)
+})
 
 // public gateways as fallbacks
-const slow = ['https://trustless-gateway.link', 'https://dweb.link']
-// const slow = ['https://trustless-gateway.link', 'https://dweb.link', 'https://ipfs.w3s.link']
-slow.map((url, idx) => {
+const maybeFast = ['https://trustless-gateway.link', 'https://dweb.link']
+maybeFast.map((url, idx) => {
   createVerifiedFetch({ gateways: [url], routers: [] })
-    .then((vfetch) => slow[idx] = vfetch)
+    .then((vfetch) => maybeFast[idx] = vfetch)
 })
 
 // accept success from any and reject if all reject
@@ -50,20 +51,18 @@ const verifiedFetchMulti = (url) => {
   const go = (fetch) => {
     const ctrl = new AbortController()
     aborts.push(ctrl)
-
     const abort = () => {
       aborts.filter((c) => c !== ctrl).forEach((c) => c.abort())
       aborts = []
     }
-
     const { signal } = ctrl
     return fetch(url, { signal }).then(okOr404).then((ok) => {
       abort()
       return ok
     })
   }
-  const idx = Math.floor(Math.random() * slow.length)
-  const gateways = [fast, slow[idx]]
+  const idx = Math.floor(Math.random() * maybeFast.length)
+  const gateways = [...fast, maybeFast[idx]]
   return Promise.any(gateways.map(go))
 }
 
