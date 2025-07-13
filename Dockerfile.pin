@@ -88,7 +88,7 @@ if [[ -v pin_api ]]; then
     bash -c "/root/ipfs.sh"
     echo ""
 fi
-if [[ -v pin_filebase_access ]]; then
+if [[ -v pin_filebase_bucket ]]; then
     bash -c "/root/filebase.sh"
     echo ""
 fi
