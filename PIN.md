@@ -13,17 +13,16 @@ The contents of example.env look like this
 ```
 pin_api=
 pin_token=
-pin_s3_api=https://s3.filebase.com
-pin_s3_bucket=abc123
-pin_s3_access=abc123
-pin_s3_secret=abc123
+pin_filebase_bucket=abc123
+pin_filebase_access=abc123
+pin_filebase_secret=abc123
 pin_storacha_email=user@email.com
 pin_storacha_space=did:key:abc123
 ```
 
 + run cp example.env .env and open .env to edit
 + if pin_api is set the native ipfs upload method will be attempted (slow)
-+ if pin_s3_api is set the s3 compat method will be used (fast)
++ if pin_filebase_bucket is set the filebase method will be used (fast)
 + if pin_storacha_email is set storacha will be used (fast)
 + if more than one is set they both pin = more peers
 

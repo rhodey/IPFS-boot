@@ -3,7 +3,7 @@ FROM ubuntu:24.04
 RUN apt update
 RUN apt install -y curl unzip git
 
-# ipfs cli = native pinning
+# ipfs cli = native pin
 WORKDIR /root/ipfs
 RUN curl https://dist.ipfs.tech/kubo/v0.32.0/kubo_v0.32.0_linux-amd64.tar.gz -o kubo_v0.32.0_linux-amd64.tar.gz
 RUN tar -xvzf kubo_v0.32.0_linux-amd64.tar.gz
@@ -33,13 +33,13 @@ echo "done: https://\$cb32.ipfs.dweb.link/"
 echo "end = \$end"
 EOF
 
-# s3 cli = faster pinning
+# filebase = fast pin
 WORKDIR /root/s3
 RUN curl https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip
 RUN unzip awscliv2.zip
 RUN bash -c "./aws/install"
 
-COPY <<EOF /root/s3.sh
+COPY <<EOF /root/filebase.sh
 # add dir
 ipfs init >>/dev/null 2>&1
 cid=\$(ipfs add -q -r /root/dist | tail -n 1)
@@ -50,13 +50,13 @@ echo "CIDv1 = \$cb32"
 ipfs dag export "\$cb32" > /root/dist.car
 # upload
 export AWS_DEFAULT_REGION=us-east-1
-export AWS_ACCESS_KEY_ID=\$pin_s3_access
-export AWS_SECRET_ACCESS_KEY=\$pin_s3_secret
-aws --endpoint \$pin_s3_api s3 cp /root/dist.car s3://\$pin_s3_bucket/\$cb32 --metadata 'import=car'
+export AWS_ACCESS_KEY_ID=\$pin_filebase_access
+export AWS_SECRET_ACCESS_KEY=\$pin_filebase_secret
+aws --endpoint https://s3.filebase.com s3 cp /root/dist.car s3://\$pin_filebase_bucket/\$cb32 --metadata 'import=car'
 echo "done: https://\$cb32.ipfs.dweb.link"
 EOF
 
-# storacha cli = fast pin w/ gateway
+# storacha = fast pin
 WORKDIR /root/js
 ENV NVM_DIR=/root/js/.nvm
 RUN git clone --depth 1 --branch v0.40.1 https://github.com/nvm-sh/nvm nvm
@@ -88,8 +88,8 @@ if [[ -v pin_api ]]; then
     bash -c "/root/ipfs.sh"
     echo ""
 fi
-if [[ -v pin_s3_api ]]; then
-    bash -c "/root/s3.sh"
+if [[ -v pin_filebase_bucket ]]; then
+    bash -c "/root/filebase.sh"
     echo ""
 fi
 if [[ -v pin_storacha_email ]]; then
@@ -98,7 +98,7 @@ fi
 EOF
 
 RUN chmod +x /root/ipfs.sh
-RUN chmod +x /root/s3.sh
+RUN chmod +x /root/filebase.sh
 RUN chmod +x /root/storacha.sh
 RUN chmod +x /root/cmd.sh
 

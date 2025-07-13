@@ -3,10 +3,10 @@ import { createVerifiedFetch } from '@helia/verified-fetch'
 
 const cacheName = 'ipfsboot'
 
-// todo: offline files go here
+// offline files go here
 const cacheAssets = ['/', '/sw.js', '/bundle.js', '/assets/favicon.png', '/assets/style.css']
 
-// dont cache bootloader files while using dev server
+// dont cache bootloader files when dev server running
 const isDev = DEV === true
 
 const pathGatewayRegex = /^.*\/(?<protocol>ip[fn]s)\/(?<cidOrPeerIdOrDnslink>[^/?#]*)(?<path>.*)$/
@@ -26,36 +26,44 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim())
 })
 
-// todo: replace with your filebase gateway
-let fast = 'https://medieval-silver-salmon.myfilebase.com'
-createVerifiedFetch({ gateways: [fast], routers: [] })
-  .then((vfetch) => fast = vfetch)
+// todo: replace with your cloudflare bucket
+// todo: if no cloudflare bucket replace with empty array
+const fast = ['https://ipfs.lock.host']
+fast.map((url, idx) => {
+  createVerifiedFetch({ gateways: [url], routers: [] })
+    .then((vfetch) => fast[idx] = vfetch)
+})
 
-// default gateways as fallbacks
-const slow = ['https://trustless-gateway.link', 'https://dweb.link']
-slow.map((url, idx) => {
-  createVerifiedFetch({ gateways: [url] })
-    .then((vfetch) => slow[idx] = vfetch)
+// public gateways as fallbacks
+const maybeFast = ['https://trustless-gateway.link', 'https://dweb.link']
+maybeFast.map((url, idx) => {
+  createVerifiedFetch({ gateways: [url], routers: [] })
+    .then((vfetch) => maybeFast[idx] = vfetch)
 })
 
 // accept success from any and reject if all reject
-const fetchMulti = (url) => {
-  const okOrThrow = (res) => {
+const verifiedFetchMulti = (url) => {
+  const okOr404 = (res) => {
     if (res.ok || res.status === 404) { return res }
     return Promise.reject(res)
   }
-
-  const works = []
-  const ctrl = new AbortController()
-  works.push(fast(url).then(okOrThrow).then((ok) => {
-    ctrl.abort()
-    return ok
-  }))
-
-  const { signal } = ctrl
-  const sloww = Math.random() >= 0.5 ? slow[0] : slow[1]
-  works.push(sloww(url, { signal }).then(okOrThrow))
-  return Promise.any(works)
+  let aborts = []
+  const go = (vfetch) => {
+    const ctrl = new AbortController()
+    aborts.push(ctrl)
+    const abort = () => {
+      // aborts.filter((c) => c !== ctrl).forEach((c) => c.abort()) // avoid issue with verified fetch
+      aborts = []
+    }
+    const { signal } = ctrl
+    return vfetch(url, { signal }).then(okOr404).then((ok) => {
+      abort()
+      return ok
+    })
+  }
+  const idx = Math.floor(Math.random() * maybeFast.length)
+  const gateways = [...fast, maybeFast[idx]]
+  return Promise.any(gateways.map(go))
 }
 
 const putInCache = async (req, res) => {
@@ -72,7 +80,7 @@ const cacheFirst = async (req, event, gateway) => {
     console.log('sw intercept', protocol, cid, path)
     url = `${protocol}://${cid}/${path}`
   }
-  const fn = gateway ? fetchMulti : fetch
+  const fn = gateway ? verifiedFetchMulti : fetch
   const ok = await fn(url)
   ok.ok && event.waitUntil(putInCache(req, ok.clone()))
   return ok

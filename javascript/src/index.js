@@ -357,6 +357,7 @@ document.addEventListener('keydown', (event) => {
   if (window.location.hash === '#boot') { return }
   if (event.key !== 'Enter') { return }
   if (!state.version) { return }
+  if (!state.remote) { return }
   state.local.pop()
   choo.emit('render')
 })
