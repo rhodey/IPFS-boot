@@ -35,7 +35,7 @@ const createVFetch = async (gateway, opts) => {
   opts = opts(libp2p)
   const helia = await createHelia({ libp2p, ...opts })
   return createVerifiedFetch(helia).catch((err) => {
-    return (url) => Promise.reject(new Error(`createVFetch failed ${gateway} ${err.message}`))
+    return (url) => Promise.reject(new Error(`createVFetch ${gateway} failed ${err.message}`))
   })
 }
 
