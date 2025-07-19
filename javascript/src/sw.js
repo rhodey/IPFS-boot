@@ -12,7 +12,7 @@ const cacheAssets = ['/', '/sw.js', '/bundle.js', '/assets/favicon.png', '/asset
 // dont cache bootloader files when dev server running
 const isDev = DEV === true
 
-const isIos = /iPad|iPhone|iPod/.test(self.navigator.userAgent)
+const isApple = /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent)
 const pathGatewayRegex = /^.*\/(?<protocol>ip[fn]s)\/(?<cidOrPeerIdOrDnslink>[^/?#]*)(?<path>.*)$/
 const subdomainGatewayRegex = /^(?:https?:\/\/|\/\/)?(?<cidOrPeerIdOrDnslink>[^/]+)\.(?<protocol>ip[fn]s)\.(?<parentDomain>[^/?#]*)(?<path>.*)$/
 
@@ -47,7 +47,7 @@ fast.map((url, idx) => {
   const opts = (libp2p) => {
     const blockBrokers = [trustlessGateway()]
     const routers = [httpGatewayRouting({ gateways: [url] })]
-    !isIos && routers.unshift(libp2pRouting(libp2p))
+    !isApple && routers.unshift(libp2pRouting(libp2p))
     return { blockBrokers, routers }
   }
   createVFetch(url, opts)
@@ -60,7 +60,7 @@ maybeFast.map((url, idx) => {
   const opts = (libp2p) => {
     const blockBrokers = [trustlessGateway()]
     const routers = [httpGatewayRouting({ gateways: [url] })]
-    !isIos && routers.unshift(libp2pRouting(libp2p))
+    !isApple && routers.unshift(libp2pRouting(libp2p))
     return { blockBrokers, routers }
   }
   createVFetch(url, opts)
