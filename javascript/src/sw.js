@@ -1,8 +1,7 @@
-import { createHelia } from 'helia'
-import { createLibp2p } from 'libp2p'
+import { createHeliaHTTP } from '@helia/http'
 import { trustlessGateway } from '@helia/block-brokers'
-import { httpGatewayRouting, libp2pRouting } from '@helia/routers'
-import { createVerifiedFetch, getLibp2pConfig } from '@helia/verified-fetch'
+import { httpGatewayRouting } from '@helia/routers'
+import { createVerifiedFetch } from '@helia/verified-fetch'
 
 const cacheName = 'ipfsboot'
 
@@ -12,7 +11,6 @@ const cacheAssets = ['/', '/sw.js', '/bundle.js', '/assets/favicon.png', '/asset
 // dont cache bootloader files when dev server running
 const isDev = DEV === true
 
-const isApple = /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent)
 const pathGatewayRegex = /^.*\/(?<protocol>ip[fn]s)\/(?<cidOrPeerIdOrDnslink>[^/?#]*)(?<path>.*)$/
 const subdomainGatewayRegex = /^(?:https?:\/\/|\/\/)?(?<cidOrPeerIdOrDnslink>[^/]+)\.(?<protocol>ip[fn]s)\.(?<parentDomain>[^/?#]*)(?<path>.*)$/
 
@@ -31,10 +29,8 @@ self.addEventListener('activate', (event) => {
 })
 
 const createVFetch = async (gateway, opts) => {
-  const libp2pConf = getLibp2pConfig()
-  const libp2p = await createLibp2p(libp2pConf)
-  opts = opts(libp2p)
-  const helia = await createHelia({ libp2p, ...opts })
+  opts = opts()
+  const helia = await createHeliaHTTP({ ...opts })
   return createVerifiedFetch(helia).catch((err) => {
     return (url) => Promise.reject(new Error(`createVFetch ${gateway} failed ${err.message}`))
   })
@@ -44,10 +40,9 @@ const createVFetch = async (gateway, opts) => {
 // todo: if no cloudflare replace with empty array
 const fast = ['https://ipfs.lock.host']
 fast.map((url, idx) => {
-  const opts = (libp2p) => {
+  const opts = () => {
     const blockBrokers = [trustlessGateway()]
     const routers = [httpGatewayRouting({ gateways: [url] })]
-    !isApple && routers.unshift(libp2pRouting(libp2p))
     return { blockBrokers, routers }
   }
   createVFetch(url, opts)
@@ -57,10 +52,9 @@ fast.map((url, idx) => {
 // public gateways as fallbacks
 const maybeFast = ['https://trustless-gateway.link', 'https://dweb.link']
 maybeFast.map((url, idx) => {
-  const opts = (libp2p) => {
+  const opts = () => {
     const blockBrokers = [trustlessGateway()]
     const routers = [httpGatewayRouting({ gateways: [url] })]
-    !isApple && routers.unshift(libp2pRouting(libp2p))
     return { blockBrokers, routers }
   }
   createVFetch(url, opts)

@@ -17,9 +17,8 @@
     "postpublish": "mv README.md bin.md",
     "copy": "cp -R index.html assets dist/ && mv dist/assets/nitro_wasm* dist/ && mv dist/assets/_redirects dist/_redirects",
     "mini": "terser dist/bundle.js --compress --output dist/bundle.js",
-    "export": "sed -i '$s/.*/export { getLibp2pConfig } from \\\".\\/utils\\/libp2p-defaults.js\\\"/' node_modules/@helia/verified-fetch/dist/src/index.js",
-    "swprod": "npm run export && esbuild src/sw.js --bundle --minify --outfile=dist/sw.js --define:DEV=\"false\"",
-    "swdev": "npm run export && esbuild src/sw.js --bundle --outfile=dist/sw.js --define:DEV=\"true\"",
+    "swprod": "esbuild src/sw.js --bundle --minify --outfile=dist/sw.js --define:DEV=\"false\"",
+    "swdev": "esbuild src/sw.js --bundle --outfile=dist/sw.js --define:DEV=\"true\"",
     "build": "npm run swprod && browserify src/index.js -o dist/bundle.js && npm run mini && npm run copy",
     "dev": "npm run swdev && bhr src/index.js index.html assets/ -o dist/bundle.js"
   },
@@ -29,6 +28,7 @@
   "devDependencies": {
     "choo": "^7.1.0",
     "choo-devtools": "^3.0.4",
+    "@helia/http": "^2.1.2",
     "@helia/verified-fetch": "^3.2.0",
     "browserify": "^17.0.0",
     "browserify-hot-reload": "^1.2.1",
