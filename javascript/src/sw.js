@@ -28,9 +28,10 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim())
 })
 
-const createVFetch = async (gateway, opts) => {
-  opts = opts()
-  const helia = await createHeliaHTTP({ ...opts })
+const createVFetch = async (gateway) => {
+  const blockBrokers = [trustlessGateway()]
+  const routers = [httpGatewayRouting({ gateways: [gateway] })]
+  const helia = await createHeliaHTTP({ blockBrokers, routers })
   return createVerifiedFetch(helia).catch((err) => {
     return (url) => Promise.reject(new Error(`createVFetch ${gateway} failed ${err.message}`))
   })
@@ -40,24 +41,14 @@ const createVFetch = async (gateway, opts) => {
 // todo: if no cloudflare replace with empty array
 const fast = ['https://ipfs.lock.host']
 fast.map((url, idx) => {
-  const opts = () => {
-    const blockBrokers = [trustlessGateway()]
-    const routers = [httpGatewayRouting({ gateways: [url] })]
-    return { blockBrokers, routers }
-  }
-  createVFetch(url, opts)
+  createVFetch(url)
     .then((vfetch) => fast[idx] = vfetch)
 })
 
 // public gateways as fallbacks
 const maybeFast = ['https://trustless-gateway.link', 'https://dweb.link']
 maybeFast.map((url, idx) => {
-  const opts = () => {
-    const blockBrokers = [trustlessGateway()]
-    const routers = [httpGatewayRouting({ gateways: [url] })]
-    return { blockBrokers, routers }
-  }
-  createVFetch(url, opts)
+  createVFetch(url)
     .then((vfetch) => maybeFast[idx] = vfetch)
 })
 
