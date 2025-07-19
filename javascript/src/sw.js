@@ -1,5 +1,8 @@
-import { httpGatewayRouting } from '@helia/routers'
-import { createVerifiedFetch } from '@helia/verified-fetch'
+import { createHelia } from 'helia'
+import { createLibp2p } from 'libp2p'
+import { trustlessGateway } from '@helia/block-brokers'
+import { httpGatewayRouting, libp2pRouting } from '@helia/routers'
+import { createVerifiedFetch, getLibp2pConfig } from '@helia/verified-fetch'
 
 const cacheName = 'ipfsboot'
 
@@ -9,6 +12,7 @@ const cacheAssets = ['/', '/sw.js', '/bundle.js', '/assets/favicon.png', '/asset
 // dont cache bootloader files when dev server running
 const isDev = DEV === true
 
+const isApple = /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent)
 const pathGatewayRegex = /^.*\/(?<protocol>ip[fn]s)\/(?<cidOrPeerIdOrDnslink>[^/?#]*)(?<path>.*)$/
 const subdomainGatewayRegex = /^(?:https?:\/\/|\/\/)?(?<cidOrPeerIdOrDnslink>[^/]+)\.(?<protocol>ip[fn]s)\.(?<parentDomain>[^/?#]*)(?<path>.*)$/
 
@@ -26,18 +30,40 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim())
 })
 
+const createVFetch = async (gateway, opts) => {
+  const libp2pConf = getLibp2pConfig()
+  const libp2p = await createLibp2p(libp2pConf)
+  opts = opts(libp2p)
+  const helia = await createHelia({ libp2p, ...opts })
+  return createVerifiedFetch(helia).catch((err) => {
+    return (url) => Promise.reject(new Error(`createVFetch ${gateway} failed ${err.message}`))
+  })
+}
+
 // todo: replace with your cloudflare bucket (or worker)
-// todo: if no cloudflare bucket replace with empty array
+// todo: if no cloudflare replace with empty array
 const fast = ['https://ipfs.lock.host']
 fast.map((url, idx) => {
-  createVerifiedFetch({ gateways: [url], routers: [] })
+  const opts = (libp2p) => {
+    const blockBrokers = [trustlessGateway()]
+    const routers = [httpGatewayRouting({ gateways: [url] })]
+    !isApple && routers.unshift(libp2pRouting(libp2p))
+    return { blockBrokers, routers }
+  }
+  createVFetch(url, opts)
     .then((vfetch) => fast[idx] = vfetch)
 })
 
 // public gateways as fallbacks
 const maybeFast = ['https://trustless-gateway.link', 'https://dweb.link']
 maybeFast.map((url, idx) => {
-  createVerifiedFetch({ gateways: [url], routers: [] })
+  const opts = (libp2p) => {
+    const blockBrokers = [trustlessGateway()]
+    const routers = [httpGatewayRouting({ gateways: [url] })]
+    !isApple && routers.unshift(libp2pRouting(libp2p))
+    return { blockBrokers, routers }
+  }
+  createVFetch(url, opts)
     .then((vfetch) => maybeFast[idx] = vfetch)
 })
 
@@ -45,25 +71,15 @@ maybeFast.map((url, idx) => {
 const verifiedFetchMulti = (url) => {
   const okOr404 = (res) => {
     if (res.ok || res.status === 404) { return res }
-    return Promise.reject(res)
+    return Promise.reject(new Error('status ' + res?.status))
   }
-  let aborts = []
-  const go = (vfetch) => {
-    const ctrl = new AbortController()
-    aborts.push(ctrl)
-    const abort = () => {
-      // aborts.filter((c) => c !== ctrl).forEach((c) => c.abort()) // avoid issue with verified fetch
-      aborts = []
-    }
-    const { signal } = ctrl
-    return vfetch(url, { signal }).then(okOr404).then((ok) => {
-      abort()
-      return ok
-    })
-  }
+  const go = (vfetch) => vfetch(url).then(okOr404)
   const idx = Math.floor(Math.random() * maybeFast.length)
   const gateways = [...fast, maybeFast[idx]]
-  return Promise.any(gateways.map(go))
+  return Promise.any(gateways.map(go)).catch((err) => {
+    err.message = err.errors.map((e) => e.message).join(', ')
+    return Promise.reject(err)
+  })
 }
 
 const putInCache = async (req, res) => {
@@ -78,7 +94,7 @@ const cacheFirst = async (req, event, gateway) => {
   if (gateway) {
     const { protocol, cidOrPeerIdOrDnslink: cid, path } = gateway
     console.log('sw intercept', protocol, cid, path)
-    url = `${protocol}://${cid}/${path}`
+    url = `${protocol}://${cid}${path}`
   }
   const fn = gateway ? verifiedFetchMulti : fetch
   const ok = await fn(url)
