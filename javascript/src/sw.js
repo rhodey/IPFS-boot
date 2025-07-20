@@ -1,6 +1,9 @@
 import { CID } from 'multiformats/cid'
 import { UnixFS } from 'ipfs-unixfs'
 import { decode as decodeDagPB } from '@ipld/dag-pb'
+import { importer } from 'ipfs-unixfs-importer'
+import { fixedSize } from 'ipfs-unixfs-importer/chunker'
+import { MemoryBlockstore } from 'blockstore-core/memory'
 
 const cacheName = 'ipfsboot'
 
@@ -59,6 +62,7 @@ const fetchBlock = (cid) => {
     return fetch(url)
       .then(okOr404)
       .then((res) => res.arrayBuffer())
+      .then((buf) => new Uint8Array(buf))
   }
   const idx = Math.floor(Math.random() * maybeFast.length)
   const gateways = [...fast, maybeFast[idx]]
@@ -68,9 +72,31 @@ const fetchBlock = (cid) => {
   })
 }
 
+// require cid match
+const equal = (str1, str2) => {
+  const c1 = CID.parse(str1)
+  const c2 = CID.parse(str2)
+  return c1.multihash.bytes.every((byte, i) => byte === c2.multihash.bytes[i])
+}
+
+// require cid match
+const verify = async (target, name, buf) => {
+  target = target.toString()
+  const cid = []
+  const source = [{ content: buf }]
+  const blocks = new MemoryBlockstore()
+  const opts = { chunker: fixedSize({ chunkSize: 99_999_999 }), cidVersion: 0 }
+  for await (const entry of importer(source, blocks, opts)) {
+    cid.push(entry.cid.toString())
+  }
+  if (cid.length !== 1) { throw new Error(`File: ${name} expected 1 entry for cid`) }
+  if (!equal(target, cid[0])) { throw new Error(`File: ${name} expected: ${target} got: ${cid[0]}`) }
+}
+
 // return file contents or links in dir
-const fetchAndDecode = async (cid) => {
+const fetchAndDecode = async (cid, name) => {
   let buf = await fetchBlock(cid)
+  await verify(cid, name, buf)
   const node = decodeDagPB(buf)
   const unixfs = UnixFS.unmarshal(node.Data)
   if (isDir(unixfs)) {
@@ -78,7 +104,7 @@ const fetchAndDecode = async (cid) => {
   } else if (isFile(unixfs) && node.Links && node.Links.length > 0) {
     const bufs = []
     for (const link of node.Links) {
-      buf = await fetchAndDecode(link.Hash)
+      buf = await fetchAndDecode(link.Hash, name + bufs.length)
       bufs.push(buf)
     }
     return concat(bufs)
@@ -102,7 +128,7 @@ const findFile = async (root, path) => {
     const match = dir.find((link) => link.Name === part)
     if (!match) { return notFound() }
     let next = children[match.Hash]
-    if (!next) { next = children[match.Hash] = fetchAndDecode(match.Hash) }
+    if (!next) { next = children[match.Hash] = fetchAndDecode(match.Hash, search + part) }
     const ok = await next
     search += part
     if (!Array.isArray(ok) && search === path) {
@@ -119,7 +145,7 @@ const findFile = async (root, path) => {
 const verifiedFetch = async (args) => {
   const [cid, path] = args
   let root = roots[cid]
-  if (!root) { root = roots[cid] = fetchAndDecode(cid) }
+  if (!root) { root = roots[cid] = fetchAndDecode(cid, 'root') }
   return root.then((root) => findFile(root, path))
 }
 
