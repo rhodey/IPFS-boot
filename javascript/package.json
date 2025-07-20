@@ -1,6 +1,6 @@
 {
   "name": "ipfs-boot",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "Publish IPFS webapps which require user consent to update",
   "license": "MIT",
   "repository": {
@@ -19,7 +19,7 @@
     "mini": "terser dist/bundle.js --compress --output dist/bundle.js",
     "swprod": "esbuild src/sw.js --bundle --minify --outfile=dist/sw.js --define:DEV=\"false\"",
     "swdev": "esbuild src/sw.js --bundle --outfile=dist/sw.js --define:DEV=\"true\"",
-    "build": "npm run swprod && browserify src/index.js -o dist/bundle.js && npm run mini && npm run copy",
+    "build": "npm run swprod && esbuild src/index.js --bundle --minify --target=es2022 --outfile=dist/bundle.js && npm run copy",
     "dev": "npm run swdev && bhr src/index.js index.html assets/ -o dist/bundle.js"
   },
   "dependencies": {
