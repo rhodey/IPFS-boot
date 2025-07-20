@@ -34,8 +34,8 @@
     "browserify": "^17.0.0",
     "browserify-hot-reload": "^1.2.1",
     "esbuild": "^0.25.6",
-    "tape": "4.6.0",
-    "terser": "^5.43.1"
+    "terser": "^5.43.1",
+    "tape": "4.6.0"
   },
   "keywords": [
     "ipfs",
