@@ -17,9 +17,9 @@
     "postpublish": "mv README.md bin.md",
     "copy": "cp -R index.html assets dist/ && mv dist/assets/nitro_wasm* dist/ && mv dist/assets/_redirects dist/_redirects",
     "mini": "terser dist/bundle.js --compress --output dist/bundle.js",
-    "swprod": "esbuild src/sw.js --bundle --minify --outfile=dist/sw.js --define:DEV=\"false\"",
-    "swdev": "esbuild src/sw.js --bundle --outfile=dist/sw.js --define:DEV=\"true\"",
-    "build": "npm run swprod && esbuild src/index.js --bundle --minify --target=es2022 --outfile=dist/bundle.js && npm run copy",
+    "swprod": "esbuild src/sw.js --bundle --target=es2022 --minify --outfile=dist/sw.js --define:DEV=\"false\"",
+    "swdev": "esbuild src/sw.js --bundle --target=es2022 --outfile=dist/sw.js --define:DEV=\"true\"",
+    "build": "npm run swprod && esbuild src/index.js --bundle --target=es2022 --minify --outfile=dist/bundle.js && npm run copy",
     "dev": "npm run swdev && bhr src/index.js index.html assets/ -o dist/bundle.js"
   },
   "dependencies": {
