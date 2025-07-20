@@ -1,6 +1,6 @@
 {
   "name": "ipfs-boot",
-  "version": "1.7.1",
+  "version": "1.7.2",
   "description": "Publish IPFS webapps which require user consent to update",
   "license": "MIT",
   "repository": {
