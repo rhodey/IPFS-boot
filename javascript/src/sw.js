@@ -10,9 +10,6 @@ const cacheName = 'ipfsboot'
 // offline files go here
 const cacheAssets = ['/', '/sw.js', '/bundle.js', '/assets/favicon.png', '/assets/style.css']
 
-// dont cache bootloader files when dev server running
-const isDev = DEV === true
-
 const pathGatewayRegex = /^.*\/(?<protocol>ip[fn]s)\/(?<cidOrPeerIdOrDnslink>[^/?#]*)(?<path>.*)$/
 const subdomainGatewayRegex = /^(?:https?:\/\/|\/\/)?(?<cidOrPeerIdOrDnslink>[^/]+)\.(?<protocol>ip[fn]s)\.(?<parentDomain>[^/?#]*)(?<path>.*)$/
 
@@ -32,7 +29,7 @@ const concat = (bufs) => {
 
 self.addEventListener('install', (event) => {
   console.log('sw install')
-  !isDev && event.waitUntil(
+  !DEV && event.waitUntil(
     caches.open(cacheName)
       .then((cache) => cache.addAll(cacheAssets))
   )
@@ -44,6 +41,28 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim())
 })
 
+// require cid match
+const equal = (str1, str2) => {
+  const c1 = CID.parse(str1)
+  const c2 = CID.parse(str2)
+  return c1.multihash.bytes.every((byte, i) => byte === c2.multihash.bytes[i])
+}
+
+// require cid match
+const verify = async (target, fname, buf) => {
+  target = target.toString()
+  const cid = []
+  const source = [{ content: buf }]
+  const blocks = new MemoryBlockstore()
+  const opts = { chunker: fixedSize({ chunkSize: 99_999_999 }), cidVersion: 0 }
+  for await (const entry of importer(source, blocks, opts)) {
+    cid.push(entry.cid.toString())
+  }
+  if (cid.length !== 1) { throw new Error(`File: ${fname} expected 1 entry for cid`) }
+  if (!equal(target, cid[0])) { throw new Error(`File: ${fname} expected: ${target} got: ${cid[0]}`) }
+  return buf
+}
+
 // todo: replace with your cloudflare bucket or worker
 // todo: if no cloudflare replace with empty array
 const fast = ['https://ipfs.lock.host']
@@ -52,17 +71,15 @@ const fast = ['https://ipfs.lock.host']
 const maybeFast = ['https://trustless-gateway.link', 'https://dweb.link']
 
 // accept success from any and reject if all reject
-const fetchBlock = (cid) => {
-  const okOr404 = (res) => {
-    if (res.ok || res.status === 404) { return res }
-    return Promise.reject(new Error('Status ' + res?.status))
-  }
+const fetchBlock = (cid, fname) => {
+  const isOk = (res) => res.ok ? res : Promise.reject(new Error('Status ' + res.status))
+  const safe = (buf) => verify(cid, fname, buf)
   const go = (gateway) => {
     const url = `${gateway}/ipfs/${cid}?format=raw`
     return fetch(url)
-      .then(okOr404)
+      .then(isOk)
       .then((res) => res.arrayBuffer())
-      .then((buf) => new Uint8Array(buf))
+      .then((buf) => safe(new Uint8Array(buf)))
   }
   const idx = Math.floor(Math.random() * maybeFast.length)
   const gateways = [...fast, maybeFast[idx]]
@@ -72,31 +89,9 @@ const fetchBlock = (cid) => {
   })
 }
 
-// require cid match
-const equal = (str1, str2) => {
-  const c1 = CID.parse(str1)
-  const c2 = CID.parse(str2)
-  return c1.multihash.bytes.every((byte, i) => byte === c2.multihash.bytes[i])
-}
-
-// require cid match
-const verify = async (target, name, buf) => {
-  target = target.toString()
-  const cid = []
-  const source = [{ content: buf }]
-  const blocks = new MemoryBlockstore()
-  const opts = { chunker: fixedSize({ chunkSize: 99_999_999 }), cidVersion: 0 }
-  for await (const entry of importer(source, blocks, opts)) {
-    cid.push(entry.cid.toString())
-  }
-  if (cid.length !== 1) { throw new Error(`File: ${name} expected 1 entry for cid`) }
-  if (!equal(target, cid[0])) { throw new Error(`File: ${name} expected: ${target} got: ${cid[0]}`) }
-}
-
 // return file contents or links in dir
-const fetchAndDecode = async (cid, name) => {
+const fetchAndDecode = async (cid, fname) => {
   let buf = await fetchBlock(cid)
-  await verify(cid, name, buf)
   const node = decodeDagPB(buf)
   const unixfs = UnixFS.unmarshal(node.Data)
   if (isDir(unixfs)) {
@@ -104,7 +99,7 @@ const fetchAndDecode = async (cid, name) => {
   } else if (isFile(unixfs) && node.Links && node.Links.length > 0) {
     const bufs = []
     for (const link of node.Links) {
-      buf = await fetchAndDecode(link.Hash, name + bufs.length)
+      buf = await fetchAndDecode(link.Hash, fname + bufs.length)
       bufs.push(buf)
     }
     return concat(bufs)
@@ -179,7 +174,7 @@ const isIpfsCompanion = (url) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url)
   const selff = url.href.startsWith(self.location.origin)
-  if (selff && isDev) { return }
+  if (selff && DEV) { return }
   let gateway = selff ? null : (url.href.match(pathGatewayRegex) ?? url.href.match(subdomainGatewayRegex))
   if (!selff && !gateway?.groups) { return }
   const doIndex = selff && !cacheAssets.includes(url.pathname)
