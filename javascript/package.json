@@ -1,6 +1,6 @@
 {
   "name": "ipfs-boot",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "Publish IPFS webapps which require user consent to update",
   "license": "MIT",
   "repository": {
@@ -30,6 +30,8 @@
     "choo-devtools": "^3.0.4",
     "@ipld/dag-pb": "^4.1.5",
     "ipfs-unixfs": "^11.2.5",
+    "ipfs-unixfs-importer": "^15.4.0",
+    "blockstore-core": "^5.0.4",
     "multiformats": "^13.3.7",
     "browserify": "^17.0.0",
     "browserify-hot-reload": "^1.2.1",
