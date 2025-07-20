@@ -3,6 +3,7 @@ Publish IPFS webapps which require user consent to update, see:
 + [IPFS-boot](https://github.com/rhodey/IPFS-boot)
 + [IPFS-boot-react](https://github.com/rhodey/IPFS-boot-react)
 + [IPFS-boot-choo](https://github.com/rhodey/IPFS-boot-choo)
++ [IPFS-boot-cloudflare](https://github.com/rhodey/IPFS-boot-cloudflare)
 
 ## Usage
 ```
