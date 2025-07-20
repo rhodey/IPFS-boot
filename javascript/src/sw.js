@@ -13,6 +13,20 @@ const isDev = DEV === true
 const pathGatewayRegex = /^.*\/(?<protocol>ip[fn]s)\/(?<cidOrPeerIdOrDnslink>[^/?#]*)(?<path>.*)$/
 const subdomainGatewayRegex = /^(?:https?:\/\/|\/\/)?(?<cidOrPeerIdOrDnslink>[^/]+)\.(?<protocol>ip[fn]s)\.(?<parentDomain>[^/?#]*)(?<path>.*)$/
 
+const isFile = (obj) => obj.type === 'file'
+const isDir = (obj) => obj.type === 'directory' || obj.type === 'hamt-sharded-directory'
+
+const concat = (bufs) => {
+  const len = bufs.reduce((acc, b) => acc + b.byteLength, 0)
+  const res = new Uint8Array(len)
+  let pos = 0
+  for (const buf of bufs) {
+    res.set(new Uint8Array(buf), pos)
+    pos += buf.byteLength
+  }
+  return res
+}
+
 self.addEventListener('install', (event) => {
   console.log('sw install')
   !isDev && event.waitUntil(
@@ -27,22 +41,11 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim())
 })
 
-const isFile = (obj) => obj.type === 'file'
-
-const isDir = (obj) => obj.type === 'directory' || obj.type === 'hamt-sharded-directory'
-
-const concat = (bufs) => {
-  const len = bufs.reduce((acc, b) => acc + b.byteLength, 0)
-  const res = new Uint8Array(len)
-  let pos = 0
-  for (const buf of bufs) {
-    res.set(new Uint8Array(buf), pos)
-    pos += buf.byteLength
-  }
-  return res
-}
-
+// todo: replace with your cloudflare bucket or worker
+// todo: if no cloudflare replace with empty array
 const fast = ['https://ipfs.lock.host']
+
+// public gateways as fallbacks
 const maybeFast = ['https://trustless-gateway.link', 'https://dweb.link']
 
 // accept success from any and reject if all reject
@@ -65,6 +68,7 @@ const fetchBlock = (cid) => {
   })
 }
 
+// return file contents or links in dir
 const fetchAndDecode = async (cid) => {
   let buf = await fetchBlock(cid)
   const node = decodeDagPB(buf)
@@ -87,6 +91,7 @@ const fetchAndDecode = async (cid) => {
 const roots = {}
 const children = {}
 
+// walk root dir until find path
 const findFile = async (root, path) => {
   const OK = (buf) => new Response(buf, { status: 200, statusText: 'OK' })
   const notFound = () => new Response('', { status: 404, statusText: 'Not Found' })
@@ -110,6 +115,7 @@ const findFile = async (root, path) => {
   }
 }
 
+// only fetch root once
 const verifiedFetch = async (args) => {
   const [cid, path] = args
   let root = roots[cid]
