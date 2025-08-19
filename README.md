@@ -7,7 +7,7 @@ Publish IPFS webapps which require user consent to update, see:
 ## How this works
 This repo contains a sort of web bootloader, you will style this repo as you like and then you will publish this repo and your app to IPFS. Your app is a fork of IPFS-boot-react or IPFS-boot-choo. You will host a file versions.json on any http server and inside this file an array of items describe versions of your app which users choose from.
 
-It is intended that you share the source of your fork of IPFS-boot and IPFS-boot-react or IPFS-boot-choo. The sources allow users to build and see the IPFS CID (a hash) you publish is the same as what they get from source. The CID of IPFS-boot will be the URL of your app, the CID of each version of your app goes in versions.json, and the bootloader reads this file.
+It is intended that you share the source of your fork of IPFS-boot and IPFS-boot-react or IPFS-boot-choo. The sources allow users to build and see the IPFS CID (a hash) you publish is the same as what they get from source. The CID of IPFS-boot will be the URL of your app, the CID of each version of your app goes in versions.json, and the bootloader polls this file.
 
 The bootloader only gets published once but your app updates can include CSS which styles the bootloader. This all actually works, and it works offline(!), give it a try.
 
