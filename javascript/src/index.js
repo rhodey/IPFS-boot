@@ -4,7 +4,7 @@ const fetch = require('./fetch.js')
 const storage = require('./storage.js')
 // require('./attest.js')
 
-// todo: better value for prod
+// todo: choose for prod
 const updateInterval = 10_000
 
 // todo: your https server with cors

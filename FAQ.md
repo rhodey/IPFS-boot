@@ -13,7 +13,7 @@ The HTML, CSS, and JS of your app is dynamically added to the HTML DOM, what is 
 Comment out the nitro_wasm.js import in javascript/index.html and remove require('./attest.js') from javascript/src/index.js (default)
 
 ### Why is IPFS-boot written with choo
-You dont need to write your app with [choo](https://github.com/choojs/choo) but you might enjoy it, choo is preferred because it has low barrier to entry.
+You dont need to write your app with [choo](https://github.com/choojs/choo) but you might enjoy it, choo is preferred because it has low barrier to entry
 
 ### How to style IPFS-boot in an app update
 The HTML and CSS which IPFS-boot uses can be seen in [javascript/src/view.js](https://github.com/rhodey/IPFS-boot/blob/master/javascript/src/view.js) and [javascript/assets/style.css](https://github.com/rhodey/IPFS-boot/blob/master/javascript/assets/style.css)
@@ -21,7 +21,7 @@ The HTML and CSS which IPFS-boot uses can be seen in [javascript/src/view.js](ht
 Include in your update /_static/boot.css with rules which target the HTML elements
 
 ### What to do before prod
-Search [javascript/src/index.js](https://github.com/rhodey/IPFS-boot/blob/master/javascript/src/index.js) and [javascript/src/sw.js](https://github.com/rhodey/IPFS-boot/blob/master/javascript/src/sw.js) for "todo"
+Search [javascript/src/index.js](https://github.com/rhodey/IPFS-boot/blob/master/javascript/src/index.js) and [javascript/src/sw.js](https://github.com/rhodey/IPFS-boot/blob/master/javascript/src/sw.js) for "todo" (about 5 items)
 
 ### Downsides
 This could have been figured out sooner!

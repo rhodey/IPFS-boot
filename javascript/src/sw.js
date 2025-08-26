@@ -4,6 +4,7 @@ import { decode as decodeDagPB } from '@ipld/dag-pb'
 import { importer } from 'ipfs-unixfs-importer'
 import { fixedSize } from 'ipfs-unixfs-importer/chunker'
 import { MemoryBlockstore } from 'blockstore-core/memory'
+import mime from 'mime'
 
 const cacheName = 'ipfsboot'
 
@@ -114,7 +115,9 @@ const children = {}
 
 // walk root dir until find path
 const findFile = async (root, path) => {
-  const OK = (buf) => new Response(buf, { status: 200, statusText: 'OK' })
+  const type = mime.getType(path) ?? 'text/plain'
+  const headers = { 'Content-Type': type }
+  const OK = (buf) => new Response(buf, { status: 200, statusText: 'OK', headers })
   const notFound = () => new Response('', { status: 404, statusText: 'Not Found' })
   let search = '/'
   let dir = root
