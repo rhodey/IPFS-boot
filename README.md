@@ -56,7 +56,7 @@ sha256sum dist/nitro_wasm.wasm
 [Velo.xyz](https://velo.xyz) and [nijynot](https://github.com/nijynot) my coworker are due thanks for some AWS Nitro contributions
 
 ## Where is demo
-Please if you want to style the default bootloader, open a PR ^.^
+Please if you want to style the bootloader, open a PR ^.^
 
 If you clicked "boot!" without reading: you can return to boot list anytime by add #boot to the url
 
