@@ -8,7 +8,7 @@ const decodeCsv = (encoded) => {
   return { PCR, publicKey, nonce }
 }
 
-module.exports = async function getAttestDoc(WASM, urlAttest, timeoutms=10_000) {
+const other = async (urlAttest) => {
   const urlCert = '/assets/root.pem'
   let cert = fetch(urlCert).then((res) => res.arrayBuffer())
   let attest = fetch(urlAttest).then((res) => res.arrayBuffer())
@@ -37,4 +37,16 @@ module.exports = async function getAttestDoc(WASM, urlAttest, timeoutms=10_000) 
   WASM._free(ptrCsv)
 
   return result
+}
+
+module.exports = function attestSession(WASM, sodium) {
+  let session = null
+  return async function useAttestSession(event) {
+    const request = event.request
+    const url = new URL(request.url)
+    const notFound = () => new Response('', { status: 405, statusText: 'Some Thing' })
+    let h = sodium.crypto_generichash(64, sodium.from_string('test'))
+    console.log('sodium', sodium.to_hex(h))
+    return notFound()
+  }
 }

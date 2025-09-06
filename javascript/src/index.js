@@ -326,6 +326,11 @@ function store(statee, emitter) {
   emitter.on('sw', (event) => {
     if (event.type !== 'attestReady') { return }
     console.log('attest ready')
+    fetch('http://localhost:8080/api/wallet').then((res) => {
+      console.log('a http', res.status)
+      return res.text()
+        .then((txt) => console.log('a http txt', txt))
+    }).catch((err) => console.error('aerr', err))
   })
 }
 
@@ -372,7 +377,10 @@ const sw = new MessageChannel()
 const setupComms = () => {
   sw.port1.onmessage = (event) => choo.emit('sw', event.data)
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    navigator.serviceWorker.controller.postMessage({ type: 'connect' }, [sw.port2])
+    const proto = window.location.protocol
+    const host = window.location.host
+    const attest = `^${proto}\/\/${host}\/api\/.*`
+    navigator.serviceWorker.controller.postMessage({ type: 'connect', attest }, [sw.port2])
   })
 }
 if ('serviceWorker' in navigator) {

@@ -4,8 +4,8 @@ import { decode as decodeDagPB } from '@ipld/dag-pb'
 import { importer } from 'ipfs-unixfs-importer'
 import { fixedSize } from 'ipfs-unixfs-importer/chunker'
 import { MemoryBlockstore } from 'blockstore-core/memory'
-import getAttestDoc from './attest.js'
-// importScripts('/assets/nitro_wasm.js')
+import _sodium from 'libsodium-wrappers';
+import attestSession from './attest.js'
 importScripts('/assets/nitro_wasm.js')
 import mime from 'mime'
 
@@ -50,18 +50,29 @@ self.addEventListener('install', (event) => {
   self.skipWaiting()
 })
 
-let attestWasm = null
-let attestError = null
+let wasmError = null
+let useAttestSession = null
 let attestWasmReady = false
 Module.onRuntimeInitialized = () => attestWasmReady = true
 
 self.addEventListener('activate', async (event) => {
   console.log('sw activate')
 
-  // load nitro_wasm if available
-  let interval = null
+  // load sodium
+  let sodium = null
   const [timer, timedout] = timeout(10_000)
-  const attestLoad = new Promise((res, rej) => {
+  const sodiumLoad = new Promise((res, rej) => {
+    timedout.catch((err) => rej(new Error('sodium load timeout')))
+    _sodium.ready.then(() => {
+      console.log('sw sodium ok')
+      sodium = _sodium
+      res()
+    }).catch(rej)
+  })
+
+  // load nitro_wasm
+  let interval = null
+  const attestLoad = () => new Promise((res, rej) => {
     timedout.catch((err) => rej(new Error('nitro_wasm load timeout')))
     const checkReady = () => {
       if (!attestWasmReady) { return }
@@ -69,7 +80,7 @@ self.addEventListener('activate', async (event) => {
         const sum = Module._add(5, 7)
         if (sum !== 12) { throw new Error(`nitro_wasm _add ${sum} != 12`) }
         console.log('sw attest ok')
-        attestWasm = Module
+        useAttestSession = attestSession(Module, sodium)
         res()
       } catch (err) {
         rej(err)
@@ -79,18 +90,24 @@ self.addEventListener('activate', async (event) => {
     checkReady()
   })
 
-  attestLoad.catch(noop).finally(() => {
+  const cleanup = () => {
     clearTimeout(timer)
     clearInterval(interval)
-  })
+  }
+
+  sodiumLoad
+    .then(attestLoad)
+    .catch((err) => wasmError = err)
+    .finally(cleanup)
 
   event.waitUntil(self.clients.claim())
 })
 
 let app = null
+let attestPattern = null
 
 const sendAttestStatus = () => {
-  if (attestWasm) {
+  if (useAttestSession) {
     app.postMessage({ type: 'attestReady' })
     return
   } else if (attestError) {
@@ -103,8 +120,8 @@ const sendAttestStatus = () => {
 
 self.addEventListener('message', event => {
   if (event?.data?.type !== 'connect') { return }
+  attestPattern = new RegExp(event.data.attest)
   app = event.ports[0]
-  app.onmessage = (e) => console.log('sw rx', e.data)
   sendAttestStatus()
 })
 
@@ -242,6 +259,8 @@ const isIpfsCompanion = (url) => {
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url)
+  const attest = attestPattern && attestPattern.test(url.href)
+  if (attest) { return event.respondWith(useAttestSession(event)) }
   const selff = url.href.startsWith(self.location.origin)
   if (selff && DEV) { return }
   let gateway = selff ? null : (url.href.match(pathGatewayRegex) ?? url.href.match(subdomainGatewayRegex))
