@@ -4,6 +4,9 @@ import { decode as decodeDagPB } from '@ipld/dag-pb'
 import { importer } from 'ipfs-unixfs-importer'
 import { fixedSize } from 'ipfs-unixfs-importer/chunker'
 import { MemoryBlockstore } from 'blockstore-core/memory'
+import getAttestDoc from './attest.js'
+// importScripts('/assets/nitro_wasm.js')
+importScripts('/assets/nitro_wasm.js')
 import mime from 'mime'
 
 const cacheName = 'ipfsboot'
@@ -11,11 +14,21 @@ const cacheName = 'ipfsboot'
 // offline files go here
 const cacheAssets = ['/', '/sw.js', '/bundle.js', '/assets/favicon.png', '/assets/style.css']
 
+const isFile = (obj) => obj.type === 'file'
+const isDir = (obj) => obj.type === 'directory' || obj.type === 'hamt-sharded-directory'
+
 const pathGatewayRegex = /^.*\/(?<protocol>ip[fn]s)\/(?<cidOrPeerIdOrDnslink>[^/?#]*)(?<path>.*)$/
 const subdomainGatewayRegex = /^(?:https?:\/\/|\/\/)?(?<cidOrPeerIdOrDnslink>[^/]+)\.(?<protocol>ip[fn]s)\.(?<parentDomain>[^/?#]*)(?<path>.*)$/
 
-const isFile = (obj) => obj.type === 'file'
-const isDir = (obj) => obj.type === 'directory' || obj.type === 'hamt-sharded-directory'
+const noop = () => {}
+
+const timeout = (ms) => {
+  let timer = null
+  const timedout = new Promise((res, rej) => {
+    timer = setTimeout(() => rej(null), ms)
+  })
+  return [timer, timedout]
+}
 
 const concat = (bufs) => {
   const len = bufs.reduce((acc, b) => acc + b.byteLength, 0)
@@ -37,9 +50,62 @@ self.addEventListener('install', (event) => {
   self.skipWaiting()
 })
 
-self.addEventListener('activate', (event) => {
+let attestWasm = null
+let attestError = null
+let attestWasmReady = false
+Module.onRuntimeInitialized = () => attestWasmReady = true
+
+self.addEventListener('activate', async (event) => {
   console.log('sw activate')
+
+  // load nitro_wasm if available
+  let interval = null
+  const [timer, timedout] = timeout(10_000)
+  const attestLoad = new Promise((res, rej) => {
+    timedout.catch((err) => rej(new Error('nitro_wasm load timeout')))
+    const checkReady = () => {
+      if (!attestWasmReady) { return }
+      try {
+        const sum = Module._add(5, 7)
+        if (sum !== 12) { throw new Error(`nitro_wasm _add ${sum} != 12`) }
+        console.log('sw attest ok')
+        attestWasm = Module
+        res()
+      } catch (err) {
+        rej(err)
+      }
+    }
+    interval = setInterval(checkReady, 50)
+    checkReady()
+  })
+
+  attestLoad.catch(noop).finally(() => {
+    clearTimeout(timer)
+    clearInterval(interval)
+  })
+
   event.waitUntil(self.clients.claim())
+})
+
+let app = null
+
+const sendAttestStatus = () => {
+  if (attestWasm) {
+    app.postMessage({ type: 'attestReady' })
+    return
+  } else if (attestError) {
+    app.postMessage({ type: 'attestError' })
+    console.log('sw attest err', attestError)
+    return
+  }
+  setTimeout(sendAttestStatus, 50)
+}
+
+self.addEventListener('message', event => {
+  if (event?.data?.type !== 'connect') { return }
+  app = event.ports[0]
+  app.onmessage = (e) => console.log('sw rx', e.data)
+  sendAttestStatus()
 })
 
 // require cid match

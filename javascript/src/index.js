@@ -322,6 +322,11 @@ function store(statee, emitter) {
     state.background = false
     emitter.emit('render')
   })
+
+  emitter.on('sw', (event) => {
+    if (event.type !== 'attestReady') { return }
+    console.log('attest ready')
+  })
 }
 
 let listeners = {}
@@ -362,11 +367,18 @@ document.addEventListener('keydown', (event) => {
   choo.emit('render')
 })
 
-// service worker
-// app still works if fails to load
+// install service worker and setup comms
+const sw = new MessageChannel()
+const setupComms = () => {
+  sw.port1.onmessage = (event) => choo.emit('sw', event.data)
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    navigator.serviceWorker.controller.postMessage({ type: 'connect' }, [sw.port2])
+  })
+}
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js')
-    .then((reg) => console.log('sw init'))
+    .then(() => console.log('sw init'))
+    .then(setupComms)
     .catch((err) => console.log('sw error', err))
 }
 
