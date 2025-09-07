@@ -339,6 +339,7 @@ dependencies = [
  "aws-nitro-enclaves-nsm-api",
  "base64 0.13.1",
  "ciborium",
+ "hex",
  "openssl",
  "serde_bytes",
 ]

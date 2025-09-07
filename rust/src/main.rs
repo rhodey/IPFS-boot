@@ -145,8 +145,7 @@ pub extern "C" fn validate(cert: *const u8, cert_len: usize, attest_doc: *const 
 
     for &index in &[0, 1, 2] {
         if let Some(pcr_entry) = doc.pcrs.get(&index) {
-            let pcr_entry = String::from_utf8_lossy(pcr_entry.as_ref()).to_string();
-            let value = format!("{},", pcr_entry);
+            let value = format!("{},", hex::encode(pcr_entry));
             csv.push_str(&value);
         } else {
             csv.push_str(",");

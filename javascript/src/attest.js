@@ -39,6 +39,7 @@ const sendHello = async (sodium, target, nonce) => {
   }
 }
 
+// todo: try get root at boot
 const attestDocParse = async (WASM, attestDoc) => {
   const urlCert = '/assets/root.pem'
   let cert = await fetch(urlCert).then((res) => res.arrayBuffer())
@@ -91,24 +92,65 @@ const startState = async (WASM, sodium, PCR, hello, nonce) => {
   }
 }
 
+const sendSessionBody = async (target, sessionId, body) => {
+  const res = await fetch(`${target}/lockhost/session?sessionId=${sessionId}`, { method: 'POST', body })
+
+  if (res.status !== 200) {
+    throw new Error(`session = status ${res.status}`)
+  }
+
+  try {
+    body = await res.json()
+    return body
+  } catch (err) {
+    throw new Error('session = reply not json')
+  }
+}
+
 module.exports = function useAttest(WASM, sodium) {
   return async function useAttestSession(PCR, event) {
-    const req = event.request
+    const req = event.request.clone()
     const url = new URL(req.url)
-    const path = url.pathname + url.search
-    const method = req.method
-    const headers = {}
-    for (const [key, value] of req.headers.entries()) { headers[key] = value }
-
-    let nonce = sodium.randombytes_buf(32)
-    nonce = encodeB64(nonce)
 
     const target = url.origin
+    let nonce = sodium.randombytes_buf(32)
+    nonce = encodeB64(nonce)
     const hello = await sendHello(sodium, target, nonce)
     const state = await startState(WASM, sodium, PCR, hello, nonce)
-    console.log('good')
+    console.log('session ok')
 
-    const notFound = () => new Response('', { status: 405, statusText: 'Some Thing' })
-    return notFound()
+    let headers = {}
+    const method = req.method
+    const path = url.pathname + url.search
+    for (const [key, value] of req.headers.entries()) { headers[key] = value }
+    let body = await req.arrayBuffer()
+    body = encodeB64(body)
+
+    let data = { path, method, headers, body }
+    data = JSON.stringify(data)
+    data = new TextEncoder().encode(data)
+
+    let key = state.sessionKeys.sharedTx
+    nonce = sodium.randombytes_buf(sodium.crypto_secretbox_NONCEBYTES)
+    let encrypted = sodium.crypto_secretbox_easy(data, nonce, key)
+    nonce = encodeB64(nonce)
+    encrypted = encodeB64(encrypted)
+    data = { nonce, encrypted }
+    data = JSON.stringify(data)
+
+    const sessionId = hello.body.sessionId
+    data = await sendSessionBody(target, sessionId, data)
+    key = state.sessionKeys.sharedRx
+    data.nonce = decodeB64(data.nonce)
+    data.encrypted = decodeB64(data.encrypted)
+    data = sodium.crypto_secretbox_open_easy(data.encrypted, data.nonce, key)
+    data = new TextDecoder().decode(data)
+    data = JSON.parse(data)
+
+    const status = data.status
+    body = decodeB64(data.body)
+    headers = data.headers
+
+    return new Response(body, { status, headers })
   }
 }
