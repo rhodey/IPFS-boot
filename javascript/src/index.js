@@ -323,10 +323,21 @@ function store(statee, emitter) {
     emitter.emit('render')
   })
 
+  state.attestReady = false
+  state.attestConfigReady = false
+
   emitter.on('sw', (event) => {
-    if (event.type !== 'attestReady') { return }
+    if (event.type === 'attestReady') {
+      state.attestReady = true
+    } else if (event.type === 'config') {
+      state.attestConfigReady = true
+    }
+
+    const ready = state.attestReady && state.attestConfigReady
+    if (!ready) { return }
+
     console.log('attest ready')
-    fetch('http://localhost:8080/api/wallet').then((res) => {
+    fetch('https://localhost:1111/api/wallet').then((res) => {
       console.log('a http', res.status)
       return res.text()
         .then((txt) => console.log('a http txt', txt))
@@ -372,15 +383,20 @@ document.addEventListener('keydown', (event) => {
   choo.emit('render')
 })
 
-// install service worker and setup comms
+// install service worker and comms
 const sw = new MessageChannel()
 const setupComms = () => {
-  sw.port1.onmessage = (event) => choo.emit('sw', event.data)
+  sw.port1.onmessage = (event) => {
+    choo.emit('sw', event.data)
+    if (event.data?.type !== 'attestReady') { return }
+    let PCR = new Array(96).fill('0').join('')
+    PCR = [PCR, PCR, PCR]
+    const pattern = `^https:\/\/localhost:1111\/api\/.*`
+    const patterns = [{ PCR, pattern }]
+    sw.port1.postMessage({ type: 'config', patterns })
+  }
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    const proto = window.location.protocol
-    const host = window.location.host
-    const attest = `^${proto}\/\/${host}\/api\/.*`
-    navigator.serviceWorker.controller.postMessage({ type: 'connect', attest }, [sw.port2])
+    navigator.serviceWorker.controller.postMessage({ type: 'connect' }, [sw.port2])
   })
 }
 if ('serviceWorker' in navigator) {

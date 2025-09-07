@@ -39,9 +39,10 @@ const other = async (urlAttest) => {
   return result
 }
 
-module.exports = function attestSession(WASM, sodium) {
+module.exports = function useAttest(WASM, sodium) {
   let session = null
-  return async function useAttestSession(event) {
+  return async function useAttestSession(PCR, event) {
+    console.log('pcr', PCR)
     const request = event.request
     const url = new URL(request.url)
     const notFound = () => new Response('', { status: 405, statusText: 'Some Thing' })

@@ -5,7 +5,7 @@ import { importer } from 'ipfs-unixfs-importer'
 import { fixedSize } from 'ipfs-unixfs-importer/chunker'
 import { MemoryBlockstore } from 'blockstore-core/memory'
 import _sodium from 'libsodium-wrappers';
-import attestSession from './attest.js'
+import useAttest from './attest.js'
 importScripts('/assets/nitro_wasm.js')
 import mime from 'mime'
 
@@ -80,7 +80,7 @@ self.addEventListener('activate', async (event) => {
         const sum = Module._add(5, 7)
         if (sum !== 12) { throw new Error(`nitro_wasm _add ${sum} != 12`) }
         console.log('sw attest ok')
-        useAttestSession = attestSession(Module, sodium)
+        useAttestSession = useAttest(Module, sodium)
         res()
       } catch (err) {
         rej(err)
@@ -104,25 +104,39 @@ self.addEventListener('activate', async (event) => {
 })
 
 let app = null
-let attestPattern = null
+let attestPatterns = null
+
+const findPcrForHref = (href) => {
+  if (!attestPatterns) { return }
+  const match = attestPatterns.find((obj) => obj.pattern.test(href))
+  if (!match) { return }
+  return match.PCR
+}
 
 const sendAttestStatus = () => {
   if (useAttestSession) {
     app.postMessage({ type: 'attestReady' })
     return
   } else if (attestError) {
-    app.postMessage({ type: 'attestError' })
+    app.postMessage({ type: 'attestError', error: attestError.message })
     console.log('sw attest err', attestError)
     return
   }
   setTimeout(sendAttestStatus, 50)
 }
 
-self.addEventListener('message', event => {
-  if (event?.data?.type !== 'connect') { return }
-  attestPattern = new RegExp(event.data.attest)
+self.addEventListener('message', (event) => {
+  if (event.data?.type !== 'connect') { return }
   app = event.ports[0]
   sendAttestStatus()
+  app.onmessage = (event) => {
+    if (event.data?.type !== 'config') { return }
+    attestPatterns = event.data.patterns.map((obj) => {
+      obj.pattern = new RegExp(obj.pattern)
+      return obj
+    })
+    app.postMessage({ type: 'config' })
+  }
 })
 
 // require cid match
@@ -259,8 +273,8 @@ const isIpfsCompanion = (url) => {
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url)
-  const attest = attestPattern && attestPattern.test(url.href)
-  if (attest) { return event.respondWith(useAttestSession(event)) }
+  const PCR = findPcrForHref(url.href)
+  if (PCR) { return event.respondWith(useAttestSession(PCR, event)) }
   const selff = url.href.startsWith(self.location.origin)
   if (selff && DEV) { return }
   let gateway = selff ? null : (url.href.match(pathGatewayRegex) ?? url.href.match(subdomainGatewayRegex))
