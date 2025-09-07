@@ -1,3 +1,5 @@
+const cookie = require('cookie')
+
 const encodeB64 = (bytes) => {
   let binary = ``
   const len = bytes.length
@@ -39,7 +41,6 @@ const sendHello = async (sodium, target, nonce) => {
   }
 }
 
-// todo: try get root at boot
 const attestDocParse = async (WASM, cert, attestDoc) => {
   const ptrCert = WASM._malloc(cert.length)
   WASM.HEAPU8.set(cert, ptrCert)
@@ -89,8 +90,8 @@ const startState = async (WASM, sodium, PCR, cert, hello, nonce) => {
   }
 }
 
-const sendSessionBody = async (target, sessionId, body) => {
-  const res = await fetch(`${target}/lockhost/session?sessionId=${sessionId}`, { method: 'POST', body })
+const sendSessionBody = async (target, sid, body) => {
+  const res = await fetch(`${target}/lockhost/session?sid=${sid}`, { method: 'POST', body })
 
   if (res.status !== 200) {
     throw new Error(`session = status ${res.status}`)
@@ -104,7 +105,7 @@ const sendSessionBody = async (target, sessionId, body) => {
   }
 }
 
-module.exports = async function useAttest(WASM, sodium) {
+module.exports = async function useAttest(WASM, sodium, cookieStore) {
   const urlCert = '/assets/root.pem'
   let cert = await fetch(urlCert).then((res) => res.arrayBuffer())
   cert = new Uint8Array(cert)
@@ -150,6 +151,14 @@ module.exports = async function useAttest(WASM, sodium) {
     const status = data.status
     body = decodeB64(data.body)
     headers = data.headers
+
+    let cookies = headers['set-cookie'] ?? ''
+    cookies = Array.isArray(cookies) ? cookies : [cookies]
+    cookies = cookies.map((str) => str.substr(0, str.indexOf(';')))
+    cookies = cookies.reduce((acc, str) => Object.assign(acc, cookie.parse(str)), {})
+
+    const ok = Object.keys(cookies).map((name) => cookieStore.set(name, cookies[name]))
+    await Promise.all(ok)
 
     return new Response(body, { status, headers })
   }
