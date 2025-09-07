@@ -40,10 +40,7 @@ const sendHello = async (sodium, target, nonce) => {
 }
 
 // todo: try get root at boot
-const attestDocParse = async (WASM, attestDoc) => {
-  const urlCert = '/assets/root.pem'
-  let cert = await fetch(urlCert).then((res) => res.arrayBuffer())
-  cert = new Uint8Array(cert)
+const attestDocParse = async (WASM, cert, attestDoc) => {
   const ptrCert = WASM._malloc(cert.length)
   WASM.HEAPU8.set(cert, ptrCert)
 
@@ -68,11 +65,11 @@ const attestDocParse = async (WASM, attestDoc) => {
   return result
 }
 
-const startState = async (WASM, sodium, PCR, hello, nonce) => {
+const startState = async (WASM, sodium, PCR, cert, hello, nonce) => {
   const { body, keys } = hello
   const { attestDoc } = body
   const attestDocBytes = new TextEncoder().encode(attestDoc)
-  const ok = await attestDocParse(WASM, attestDocBytes)
+  const ok = await attestDocParse(WASM, cert, attestDocBytes)
   const { publicKey, nonce: nonce2, PCR: PCR2 } = ok
 
   if (nonce !== encodeB64(nonce2)) {
@@ -107,7 +104,11 @@ const sendSessionBody = async (target, sessionId, body) => {
   }
 }
 
-module.exports = function useAttest(WASM, sodium) {
+module.exports = async function useAttest(WASM, sodium) {
+  const urlCert = '/assets/root.pem'
+  let cert = await fetch(urlCert).then((res) => res.arrayBuffer())
+  cert = new Uint8Array(cert)
+
   return async function useAttestSession(PCR, event) {
     const req = event.request.clone()
     const url = new URL(req.url)
@@ -116,8 +117,7 @@ module.exports = function useAttest(WASM, sodium) {
     let nonce = sodium.randombytes_buf(32)
     nonce = encodeB64(nonce)
     const hello = await sendHello(sodium, target, nonce)
-    const state = await startState(WASM, sodium, PCR, hello, nonce)
-    console.log('session ok')
+    const state = await startState(WASM, sodium, PCR, cert, hello, nonce)
 
     let headers = {}
     const method = req.method

@@ -79,9 +79,11 @@ self.addEventListener('activate', async (event) => {
       try {
         const sum = Module._add(5, 7)
         if (sum !== 12) { throw new Error(`nitro_wasm _add ${sum} != 12`) }
-        console.log('sw attest ok')
-        useAttestSession = useAttest(Module, sodium)
-        res()
+        useAttest(Module, sodium).then((fn) => {
+          console.log('sw attest ok')
+          useAttestSession = fn
+          res()
+        }).catch(rej)
       } catch (err) {
         rej(err)
       }

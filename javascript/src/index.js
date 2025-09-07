@@ -337,11 +337,14 @@ function store(statee, emitter) {
     if (!ready) { return }
 
     console.log('attest ready')
-    fetch('https://localhost:1111/api/wallet').then((res) => {
-      console.log('a http', res.status)
+
+    const test = () => fetch('https://localhost:1111/api/wallet').then((res) => {
+      console.log('wallet status', res.status)
       return res.text()
-        .then((txt) => console.log('a http txt', txt))
-    }).catch((err) => console.error('aerr', err))
+        .then((txt) => console.log('wallet txt', txt))
+    }).catch(console.error)
+
+    test().then(() => setTimeout(test, 5000))
   })
 }
 
