@@ -117,9 +117,9 @@ const sendAttestStatus = () => {
   if (useAttestSession) {
     app.postMessage({ type: 'attestReady' })
     return
-  } else if (attestError) {
-    app.postMessage({ type: 'attestError', error: attestError.message })
-    console.log('sw attest err', attestError)
+  } else if (wasmError) {
+    app.postMessage({ type: 'attestError', error: wasmError.message })
+    console.log('sw attest err', wasmError)
     return
   }
   setTimeout(sendAttestStatus, 50)

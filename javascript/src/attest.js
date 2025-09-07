@@ -6,7 +6,7 @@ const encodeB64 = (bytes) => {
 }
 
 const decodeB64 = (str) => {
-  const binary = window.atob(str)
+  const binary = atob(str)
   const len = binary.length
   const bytes = new Uint8Array(len)
   for (let i = 0; i < len; i++) { bytes[i] = binary.charCodeAt(i) }
@@ -16,8 +16,8 @@ const decodeB64 = (str) => {
 const decodeCsv = (encoded) => {
   encoded = new TextDecoder().decode(encoded.slice(0, encoded.indexOf(0)))
   encoded = encoded.split(',')
-  const PCR = encoded.slice(0, 3)
-  const [publicKey, nonce] = encoded.slice(3, 5).map((str) => decodeB64(str))
+  const [publicKey, nonce, userData] = encoded.slice(0, 3).map((str) => decodeB64(str))
+  const PCR = encoded.slice(3, 6)
   return { PCR, publicKey, nonce }
 }
 
@@ -46,15 +46,15 @@ const attestDocParse = async (WASM, attestDoc) => {
   const ptrCert = WASM._malloc(cert.length)
   WASM.HEAPU8.set(cert, ptrCert)
 
-  const ptrAttest = WASM._malloc(attestDoc.length)
-  WASM.HEAPU8.set(attestDoc, ptrAttest)
+  const attest = new Uint8Array(attestDoc)
+  const ptrAttest = WASM._malloc(attest.length)
+  WASM.HEAPU8.set(attest, ptrAttest)
 
-  // let csv = new Uint8Array(attestDoc.length)
   let csv = new Uint8Array(1024 * 16)
   const ptrCsv = WASM._malloc(csv.length)
   WASM.HEAPU8.set(csv, ptrCsv)
 
-  const code = WASM._validate(ptrCert, cert.length, ptrAttest, attestDoc.length, ptrCsv, csv.length)
+  const code = WASM._validate(ptrCert, cert.length, ptrAttest, attest.length, ptrCsv, csv.length)
   if (code !== 0) { throw new Error(`attest failed with code ${code}`) }
 
   csv = new Uint8Array(WASM.HEAPU8.buffer, ptrCsv, csv.length)
@@ -69,9 +69,9 @@ const attestDocParse = async (WASM, attestDoc) => {
 
 const startState = async (WASM, sodium, PCR, hello, nonce) => {
   const { body, keys } = hello
-  let { attestDoc } = body
-  attestDoc = decodeB64(attestDoc)
-  const ok = await attestDocParse(WASM, attestDoc)
+  const { attestDoc } = body
+  const attestDocBytes = new TextEncoder().encode(attestDoc)
+  const ok = await attestDocParse(WASM, attestDocBytes)
   const { publicKey, nonce: nonce2, PCR: PCR2 } = ok
 
   if (nonce !== encodeB64(nonce2)) {
@@ -93,24 +93,20 @@ const startState = async (WASM, sodium, PCR, hello, nonce) => {
 
 module.exports = function useAttest(WASM, sodium) {
   return async function useAttestSession(PCR, event) {
-    console.log('PCR', PCR)
     const req = event.request
     const url = new URL(req.url)
     const path = url.pathname + url.search
     const method = req.method
     const headers = {}
     for (const [key, value] of req.headers.entries()) { headers[key] = value }
-    console.log('have opts')
 
     let nonce = sodium.randombytes_buf(32)
     nonce = encodeB64(nonce)
-    console.log('have nonce')
 
     const target = url.origin
     const hello = await sendHello(sodium, target, nonce)
-    console.log('have hello')
     const state = await startState(WASM, sodium, PCR, hello, nonce)
-    console.log('have state')
+    console.log('good')
 
     const notFound = () => new Response('', { status: 405, statusText: 'Some Thing' })
     return notFound()

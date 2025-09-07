@@ -20,7 +20,7 @@
     "swprod": "esbuild src/sw.js --bundle --target=es2022 --minify --outfile=dist/sw.js --define:DEV=\"false\"",
     "swdev": "esbuild src/sw.js --bundle --target=es2022 --outfile=dist/sw.js --define:DEV=\"true\"",
     "build": "npm run swprod && esbuild src/index.js --bundle --target=es2022 --minify --outfile=dist/bundle.js && npm run copy",
-    "dev": "npm run swdev && bhr src/index.js index.html assets/ -o dist/bundle.js"
+    "dev": "npm run swdev && npm run copy && bhr src/index.js index.html assets/ -o dist/bundle.js"
   },
   "dependencies": {
     "minimist": "^1.2.0"
