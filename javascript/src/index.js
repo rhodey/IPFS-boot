@@ -395,9 +395,9 @@ const setupComms = () => {
     const patterns = [{ PCR, pattern }]
     sw.port1.postMessage({ type: 'config', patterns })
   }
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    navigator.serviceWorker.controller.postMessage({ type: 'connect' }, [sw.port2])
-  })
+  const connect = () => navigator.serviceWorker.controller.postMessage({ type: 'connect' }, [sw.port2])
+  if (navigator.serviceWorker.controller) { return connect() }
+  navigator.serviceWorker.addEventListener('controllerchange', connect)
 }
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js')
