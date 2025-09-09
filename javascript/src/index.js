@@ -2,13 +2,12 @@ const chooo = require('choo')
 const devtools = require('choo-devtools')
 const fetch = require('./fetch.js')
 const storage = require('./storage.js')
-// require('./attest.js')
 
 // todo: choose for prod
 const updateInterval = 10_000
 
 // todo: your https server with cors
-const versionsUrl = 'https://rhodey.org/assets/versions.json'
+const versionsUrl = 'https://rhodey.org/assets/versions.json.attest'
 
 const equal = (a, b) => a?.cid === b?.cid && a?.version === b?.version
 
@@ -322,30 +321,6 @@ function store(statee, emitter) {
     state.background = false
     emitter.emit('render')
   })
-
-  state.attestReady = false
-  state.attestConfigReady = false
-
-  emitter.on('sw', (event) => {
-    if (event.type === 'attestReady') {
-      state.attestReady = true
-    } else if (event.type === 'config') {
-      state.attestConfigReady = true
-    }
-
-    const ready = state.attestReady && state.attestConfigReady
-    if (!ready) { return }
-
-    console.log('attest ready')
-
-    const test = () => fetch('https://localhost:1111/api/wallet').then((res) => {
-      console.log('wallet status', res.status)
-      return res.text()
-        .then((txt) => console.log('wallet txt', txt))
-    }).catch(console.error)
-
-    test().then(() => setTimeout(test, 5000))
-  })
 }
 
 let listeners = {}
@@ -386,26 +361,10 @@ document.addEventListener('keydown', (event) => {
   choo.emit('render')
 })
 
-// install service worker and comms
-const sw = new MessageChannel()
-const setupComms = () => {
-  sw.port1.onmessage = (event) => {
-    choo.emit('sw', event.data)
-    if (event.data?.type !== 'attestReady') { return }
-    let PCR = new Array(96).fill('0').join('')
-    PCR = [PCR, PCR, PCR]
-    const pattern = `^https:\/\/localhost:1111\/api\/.*`
-    const patterns = [{ PCR, pattern }]
-    sw.port1.postMessage({ type: 'config', patterns })
-  }
-  const connect = () => navigator.serviceWorker.controller.postMessage({ type: 'connect' }, [sw.port2])
-  if (navigator.serviceWorker.controller) { return connect() }
-  navigator.serviceWorker.addEventListener('controllerchange', connect)
-}
+// setup service worker
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js')
-    .then(() => console.log('sw init'))
-    .then(setupComms)
+    .then((reg) => console.log('sw init'))
     .catch((err) => console.log('sw error', err))
 }
 

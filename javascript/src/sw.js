@@ -4,9 +4,9 @@ import { decode as decodeDagPB } from '@ipld/dag-pb'
 import { importer } from 'ipfs-unixfs-importer'
 import { fixedSize } from 'ipfs-unixfs-importer/chunker'
 import { MemoryBlockstore } from 'blockstore-core/memory'
-import _sodium from 'libsodium-wrappers';
+import _sodium from 'libsodium-wrappers'
 import useAttest from './attest.js'
-importScripts('/assets/nitro_wasm.js')
+importScripts('/nitro_wasm.js')
 import mime from 'mime'
 
 const cacheName = 'ipfsboot'
@@ -50,7 +50,7 @@ self.addEventListener('install', (event) => {
   self.skipWaiting()
 })
 
-let wasmError = null
+let attestError = null
 let useAttestSession = null
 let attestWasmReady = false
 Module.onRuntimeInitialized = () => attestWasmReady = true
@@ -99,7 +99,7 @@ self.addEventListener('activate', async (event) => {
 
   sodiumLoad
     .then(attestLoad)
-    .catch((err) => wasmError = err)
+    .catch((err) => attestError = err)
     .finally(cleanup)
 
   event.waitUntil(self.clients.claim())
@@ -119,9 +119,9 @@ const sendAttestStatus = () => {
   if (useAttestSession) {
     app.postMessage({ type: 'attestReady' })
     return
-  } else if (wasmError) {
-    app.postMessage({ type: 'attestError', error: wasmError.message })
-    console.log('sw attest err', wasmError)
+  } else if (attestError) {
+    app.postMessage({ type: 'attestError', error: attestError.message })
+    console.log('sw attestError', attestError)
     return
   }
   setTimeout(sendAttestStatus, 50)

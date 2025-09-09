@@ -54,7 +54,7 @@ const attestDocParse = async (WASM, cert, attestDoc) => {
   WASM.HEAPU8.set(csv, ptrCsv)
 
   const code = WASM._validate(ptrCert, cert.length, ptrAttest, attest.length, ptrCsv, csv.length)
-  if (code !== 0) { throw new Error(`attest failed with code ${code}`) }
+  if (code !== 0) { throw new Error(`attest WASM code ${code}`) }
 
   csv = new Uint8Array(WASM.HEAPU8.buffer, ptrCsv, csv.length)
   const result = decodeCsv(csv)
@@ -110,7 +110,7 @@ module.exports = async function useAttest(WASM, sodium, cookieStore) {
   let cert = await fetch(urlCert).then((res) => res.arrayBuffer())
   cert = new Uint8Array(cert)
 
-  return async function useAttestSession(PCR, event) {
+  async function useAttestSession(PCR, event) {
     const req = event.request.clone()
     const url = new URL(req.url)
 
@@ -120,10 +120,27 @@ module.exports = async function useAttest(WASM, sodium, cookieStore) {
     const hello = await sendHello(sodium, target, nonce)
     const state = await startState(WASM, sodium, PCR, cert, hello, nonce)
 
+    // copy headers from request
     let headers = {}
-    const method = req.method
+    for (const [key, value] of req.headers.entries()) {
+      if (Array.isArray(headers[key])) {
+        headers[key].push(value)
+      } else if (headers[key]) {
+        headers[key] = [headers[key], value]
+      } else {
+        headers[key] = value
+      }
+    }
+
+    // Cookie header is hidden so use cookieStore
+    headers['Cookie'] = ``
+    await cookieStore.getAll().then((all) => {
+      all.forEach((c) => headers['Cookie'] += `${c.name}=${c.value}; `)
+      all.length <= 0 && delete headers['Cookie']
+    })
+
     const path = url.pathname + url.search
-    for (const [key, value] of req.headers.entries()) { headers[key] = value }
+    const method = req.method
     let body = await req.arrayBuffer()
     body = encodeB64(body)
 
@@ -147,19 +164,40 @@ module.exports = async function useAttest(WASM, sodium, cookieStore) {
     data = sodium.crypto_secretbox_open_easy(data.encrypted, data.nonce, key)
     data = new TextDecoder().decode(data)
     data = JSON.parse(data)
-
     const status = data.status
     body = decodeB64(data.body)
-    headers = data.headers
 
-    let cookies = headers['set-cookie'] ?? ''
+    // Set-Cookie header is forbidden so use cookieStore
+    let cookies = data.headers['set-cookie'] ?? ''
     cookies = Array.isArray(cookies) ? cookies : [cookies]
     cookies = cookies.map((str) => str.substr(0, str.indexOf(';')))
     cookies = cookies.reduce((acc, str) => Object.assign(acc, cookie.parse(str)), {})
-
-    const ok = Object.keys(cookies).map((name) => cookieStore.set(name, cookies[name]))
+    const ok = Object.keys(cookies).map((key) => cookieStore.set(key, cookies[key]))
     await Promise.all(ok)
 
+    headers = new Headers()
+    Object.keys(data.headers).forEach((key) => {
+      const value = data.headers[key]
+      if (!Array.isArray(value)) {
+        headers.append(key, value)
+      } else {
+        value.forEach((val) => headers.append(key, val))
+      }
+    })
+
     return new Response(body, { status, headers })
+  }
+
+  return async function wrap(PCR, event) {
+    try {
+
+      const response = await useAttestSession(PCR, event)
+      return response
+
+    } catch (err) {
+      console.log('sw session err', err)
+      const body = err.message
+      return new Response(body, { status: 555 })
+    }
   }
 }
