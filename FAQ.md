@@ -2,7 +2,7 @@
 ## FAQ
 
 ### How are updates booted
-The HTML, CSS, and JS of your app is dynamically added to the HTML DOM, what is being done is very similar to how "hot reload" works when developing angular or react. Take a look at [javascript/src/index.js](https://github.com/rhodey/IPFS-boot/blob/master/javascript/src/index.js) it is only 350 lines.
+The HTML, CSS, and JS of your app is dynamically added to the HTML DOM, what is being done is very similar to how "hot reload" works when developing angular or react. Take a look at [javascript/src/index.js](/javascript/src/index.js) it is only 350 lines.
 
 ### What are some examples of attestation
 + [Signal uses attestation](https://signal.org/blog/private-contact-discovery/) to provide private contact discovery
@@ -16,12 +16,12 @@ Comment out the nitro_wasm.js import in javascript/index.html and remove require
 You dont need to write your app with [choo](https://github.com/choojs/choo) but you might enjoy it, choo is preferred because it has low barrier to entry
 
 ### How to style IPFS-boot in an app update
-The HTML and CSS which IPFS-boot uses can be seen in [javascript/src/view.js](https://github.com/rhodey/IPFS-boot/blob/master/javascript/src/view.js) and [javascript/assets/style.css](https://github.com/rhodey/IPFS-boot/blob/master/javascript/assets/style.css)
+The HTML and CSS which IPFS-boot uses can be seen in [javascript/src/view.js](/javascript/src/view.js) and [javascript/assets/style.css](/javascript/assets/style.css)
 
 Include in your update /_static/boot.css with rules which target the HTML elements
 
 ### What to do before prod
-Search [javascript/src/index.js](https://github.com/rhodey/IPFS-boot/blob/master/javascript/src/index.js) and [javascript/src/sw.js](https://github.com/rhodey/IPFS-boot/blob/master/javascript/src/sw.js) for "todo" (about 5 items)
+Search [javascript/src/index.js](/javascript/src/index.js) and [javascript/src/sw.js](/javascript/src/sw.js) for "todo" (about 5 items)
 
 ### Downsides
 This could have been figured out sooner!
