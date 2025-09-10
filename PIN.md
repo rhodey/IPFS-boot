@@ -35,4 +35,4 @@ docker run --rm -i --platform=linux/amd64 \
 ```
 
 ### License
-MIT - Copyright 2025 - mike@rhodey.org
+MIT
