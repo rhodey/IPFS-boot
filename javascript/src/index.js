@@ -7,7 +7,7 @@ const storage = require('./storage.js')
 const updateInterval = 10_000
 
 // todo: your https server with cors
-const versionsUrl = 'https://rhodey.org/assets/versions.json.attest'
+const versionsUrl = 'https://rhodey.org/assets/versions.json'
 
 const equal = (a, b) => a?.cid === b?.cid && a?.version === b?.version
 

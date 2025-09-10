@@ -53,7 +53,7 @@ function bootList(state, emit) {
   const detail = html`
     <div>
       <h1>${selected.version}</h1>
-      <h2>${selected.cid}</h2>
+      <h2>CID = ${selected.cid}</h2>
       <span class="bootNotes">${selected.notes}</span>
       <br/><br/>
       ${button}
@@ -64,7 +64,8 @@ function bootList(state, emit) {
     <div id="_boot">
       <div class="bootList">
         <h1>IPFS-boot!</h1>
-        <h2>${name} source code is organized <a target="_blank" href="${repo}">here</a></h2>
+        <h2>${name} has published with IPFS-boot</h2>
+        <h2>${name} has organized their source code <a target="_blank" href="${repo}">here</a></h2>
         <span class="bootDocs">
           You will be notified of updates, and anytime you want to come back here add #boot to the url
         </span>
