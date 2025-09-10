@@ -55,7 +55,8 @@ let useAttestSession = null
 let attestWasmReady = false
 Module.onRuntimeInitialized = () => attestWasmReady = true
 
-self.addEventListener('activate', async (event) => {
+const attestActivate = async () => {
+  if (useAttestSession) { return }
   console.log('sw activate')
 
   // load sodium
@@ -101,7 +102,10 @@ self.addEventListener('activate', async (event) => {
     .then(attestLoad)
     .catch((err) => attestError = err)
     .finally(cleanup)
+}
 
+self.addEventListener('activate', (event) => {
+  attestActivate()
   event.waitUntil(self.clients.claim())
 })
 
@@ -130,6 +134,7 @@ const sendAttestStatus = () => {
 self.addEventListener('message', (event) => {
   if (event.data?.type !== 'connect') { return }
   app = event.ports[0]
+  attestActivate()
   sendAttestStatus()
   app.onmessage = (event) => {
     if (event.data?.type !== 'config') { return }
