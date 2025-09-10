@@ -42,27 +42,27 @@ jobs:
         run: |
           a=$(cat out.txt | grep CIDv0 | awk '{print $3}')
           b=$(cat README.md | grep CIDv0 | awk '{print $4}')
-          [ "$a" = "$b" ] || exit 1
+          bash -c '[[ "$1" == "$2" ]]' _ "$a" "$b" || exit 1
 
       - name: Check CIDv1
         run: |
           a=$(cat out.txt | grep CIDv1 | awk '{print $3}')
           b=$(cat README.md | grep CIDv1 | awk '{print $4}')
-          [ "$a" = "$b" ] || exit 1
+          bash -c '[[ "$1" == "$2" ]]' _ "$a" "$b" || exit 1
 
       - name: Check Link 1
         run: |
           a=$(cat README.md | grep dweb.link | grep done | awk '{print $3}')
           b=$(cat out.txt | grep CIDv1 | awk '{print $3}')
           b="https://$b.ipfs.dweb.link"
-          [ "$a" = "$b" ] || exit 1
+          bash -c '[[ "$1" == "$2" ]]' _ "$a" "$b" || exit 1
 
       - name: Check Link 2
         run: |
           a=$(cat README.md | grep dweb.link | grep choo | awk '{print $3}')
           b=$(cat out.txt | grep CIDv1 | awk '{print $3}')
           b="https://$b.ipfs.dweb.link"
-          [ "$a" = "$b" ] || exit 1
+          bash -c '[[ "$1" == "$2" ]]' _ "$a" "$b" || exit 1
 
       - name: Build wasm
         run: |
