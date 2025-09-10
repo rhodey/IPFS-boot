@@ -9,9 +9,6 @@ The HTML, CSS, and JS of your app is dynamically added to the HTML DOM, what is 
 + [Attest.link](https://attest.link) is a domain I bought to do something with headless browsers and screenshots
 + There is a lot of room in this space and I am not keen to give up all ideas
 
-### How to exclude attestation code from the build
-Comment out the nitro_wasm.js import in javascript/index.html and remove require('./attest.js') from javascript/src/index.js (default)
-
 ### Why is IPFS-boot written with choo
 You dont need to write your app with [choo](https://github.com/choojs/choo) but you might enjoy it, choo is preferred because it has low barrier to entry
 
