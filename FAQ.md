@@ -29,4 +29,4 @@ This could have been figured out sooner!
 [bybit loses 1.5B](https://news.ycombinator.com/item?id=43140754), [brave removes ipfs](https://news.ycombinator.com/item?id=41381593), [cloudflare shuts down gateway](https://blog.cloudflare.com/cloudflares-public-ipfs-gateways-and-supporting-interplanetary-shipyard/)
 
 ### License
-MIT - Copyright 2025 - mike@rhodey.org
+MIT
