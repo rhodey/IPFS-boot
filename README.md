@@ -19,15 +19,15 @@ docker run --rm -i --platform=linux/amd64 -v ./dist:/root/dist ipfs-boot
 ```
 
 ## Pin
-Read [the guide](https://github.com/rhodey/IPFS-boot/blob/master/PIN.md) on choosing an IPFS pin service then
+Read [the guide](/PIN.md) on choosing an IPFS pin service then
 ```
 cp example.env .env
 docker buildx build --platform=linux/amd64 -f Dockerfile.pin -t ipfs-pin .
 docker run --rm -i --platform=linux/amd64 -v ./dist:/root/dist --env-file .env ipfs-pin
-> CIDv0 = QmWZRw7fcviCYdk1JeWdrp611su474bXtMNnGrBa1DxZE8
-> CIDv1 = bafybeid2eom3gwxknthadjdtywn7zpisteivmgbxtyjctr2pan4flcgnce
-> upload: ../dist.car to s3://bucket-name/bafybeid2eom3gwxknthadjdtywn7zpisteivmgbxtyjctr2pan4flcgnce
-> done: https://bafybeid2eom3gwxknthadjdtywn7zpisteivmgbxtyjctr2pan4flcgnce.ipfs.dweb.link
+> CIDv0 = QmQcFZUsp47bckyJTwzL6mr4HWNrGvdnRW6Z95jJbxC5bF
+> CIDv1 = bafybeibbwz7bew6l3e5lsgneebvhfe63qclvhygkmh6ba7nk566a4qdy7i
+> upload: ../dist.car to s3://bucket-name/bafybeibbwz7bew6l3e5lsgneebvhfe63qclvhygkmh6ba7nk566a4qdy7i
+> done: https://bafybeibbwz7bew6l3e5lsgneebvhfe63qclvhygkmh6ba7nk566a4qdy7i.ipfs.dweb.link
 ```
 
 Your bootloader is now live and discoverable with v0 and v1 CIDs, see [gateways](https://ipfs.github.io/public-gateway-checker/)
@@ -40,12 +40,9 @@ npm --prefix javascript/ run dev
 ```
 
 ## Why is Rust involved
-You may be wondering about the rust/ dir or dist/nitro_wasm.wasm. The Rust allows IPFS-boot to support [attestation](https://en.wikipedia.org/wiki/Trusted_Computing#Remote_attestation) with AWS Nitro servers, so reproducible __clients and servers__, see:
-+ [lock.host](https://github.com/rhodey/lock.host)
-+ [lock.host-node](https://github.com/rhodey/lock.host-node)
-+ [lock.host-python](https://github.com/rhodey/lock.host-python)
+You may be wondering about the rust/ dir or dist/nitro_wasm.wasm. The Rust allows IPFS-boot to support [attestation](https://en.wikipedia.org/wiki/Trusted_Computing#Remote_attestation) with AWS Nitro servers, so reproducible __clients and servers__, see: [lock.host](https://github.com/rhodey/lock.host)
 
-Two files nitro_wasm.js and nitro_wasm.wasm are checked into source within javascript/assets/, these are tested by [github actions](https://github.com/rhodey/IPFS-boot/actions) and to build from source do:
+Two files nitro_wasm.js and nitro_wasm.wasm are checked into source within javascript/assets/, these are tested by [github actions](https://github.com/rhodey/IPFS-boot/actions), to build from source do:
 ```
 docker buildx build --platform=linux/amd64 -f Dockerfile.wasm -t ipfs-wasm .
 docker run --rm -i --platform=linux/amd64 -v ./dist:/root/dist ipfs-wasm
@@ -53,18 +50,16 @@ sha256sum javascript/assets/nitro_wasm.wasm
 sha256sum dist/nitro_wasm.wasm
 ```
 
-[Velo.xyz](https://velo.xyz) and [nijynot](https://github.com/nijynot) my coworker are due thanks for some AWS Nitro contributions
-
 ## Where is demo
 Please if you want to style the bootloader, open a PR ^.^
 
 If you clicked "boot!" without reading: you can return to boot list anytime by add #boot to the url
 
-+ react https://bafybeicalfyyfcmhrkv66fczkkwikql3rlnsu6nc76h3nipujkgqa73k54.ipfs.dweb.link
-+ choo https://bafybeid2eom3gwxknthadjdtywn7zpisteivmgbxtyjctr2pan4flcgnce.ipfs.dweb.link
++ react https://bafybeifehbm2um54qvfifprtbkgbt25ndkq6k26zjlbe33t2j62gdjwn2m.ipfs.dweb.link
++ choo https://bafybeibbwz7bew6l3e5lsgneebvhfe63qclvhygkmh6ba7nk566a4qdy7i.ipfs.dweb.link
 
 ## FAQ
-[FAQ](https://github.com/rhodey/IPFS-boot/blob/master/FAQ.md)
+[FAQ](/FAQ.md)
 
 ## License
-MIT - Copyright 2025 - mike@rhodey.org
+MIT

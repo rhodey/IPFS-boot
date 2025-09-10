@@ -1,6 +1,6 @@
 {
   "name": "ipfs-boot",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "Publish IPFS webapps which require user consent to update",
   "license": "MIT",
   "repository": {
@@ -20,7 +20,7 @@
     "swprod": "esbuild src/sw.js --bundle --target=es2022 --minify --outfile=dist/sw.js --define:DEV=\"false\"",
     "swdev": "esbuild src/sw.js --bundle --target=es2022 --outfile=dist/sw.js --define:DEV=\"true\"",
     "build": "npm run swprod && esbuild src/index.js --bundle --target=es2022 --minify --outfile=dist/bundle.js && npm run copy",
-    "dev": "npm run swdev && bhr src/index.js index.html assets/ -o dist/bundle.js"
+    "dev": "npm run swdev && npm run copy && bhr src/index.js index.html assets/ -o dist/bundle.js"
   },
   "dependencies": {
     "minimist": "^1.2.0"
@@ -33,6 +33,8 @@
     "ipfs-unixfs-importer": "^15.4.0",
     "blockstore-core": "^5.0.4",
     "multiformats": "^13.3.7",
+    "libsodium-wrappers": "^0.7.15",
+    "cookie": "^1.0.2",
     "mime": "^4.0.7",
     "browserify-hot-reload": "^1.2.1",
     "esbuild": "^0.25.6",

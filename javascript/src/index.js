@@ -2,7 +2,6 @@ const chooo = require('choo')
 const devtools = require('choo-devtools')
 const fetch = require('./fetch.js')
 const storage = require('./storage.js')
-// require('./attest.js')
 
 // todo: choose for prod
 const updateInterval = 10_000
@@ -362,8 +361,7 @@ document.addEventListener('keydown', (event) => {
   choo.emit('render')
 })
 
-// service worker
-// app still works if fails to load
+// setup service worker
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js')
     .then((reg) => console.log('sw init'))

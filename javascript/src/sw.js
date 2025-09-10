@@ -4,6 +4,9 @@ import { decode as decodeDagPB } from '@ipld/dag-pb'
 import { importer } from 'ipfs-unixfs-importer'
 import { fixedSize } from 'ipfs-unixfs-importer/chunker'
 import { MemoryBlockstore } from 'blockstore-core/memory'
+import _sodium from 'libsodium-wrappers'
+import useAttest from './attest.js'
+importScripts('/nitro_wasm.js')
 import mime from 'mime'
 
 const cacheName = 'ipfsboot'
@@ -11,11 +14,21 @@ const cacheName = 'ipfsboot'
 // offline files go here
 const cacheAssets = ['/', '/sw.js', '/bundle.js', '/assets/favicon.png', '/assets/style.css']
 
+const isFile = (obj) => obj.type === 'file'
+const isDir = (obj) => obj.type === 'directory' || obj.type === 'hamt-sharded-directory'
+
 const pathGatewayRegex = /^.*\/(?<protocol>ip[fn]s)\/(?<cidOrPeerIdOrDnslink>[^/?#]*)(?<path>.*)$/
 const subdomainGatewayRegex = /^(?:https?:\/\/|\/\/)?(?<cidOrPeerIdOrDnslink>[^/]+)\.(?<protocol>ip[fn]s)\.(?<parentDomain>[^/?#]*)(?<path>.*)$/
 
-const isFile = (obj) => obj.type === 'file'
-const isDir = (obj) => obj.type === 'directory' || obj.type === 'hamt-sharded-directory'
+const noop = () => {}
+
+const timeout = (ms) => {
+  let timer = null
+  const timedout = new Promise((res, rej) => {
+    timer = setTimeout(() => rej(null), ms)
+  })
+  return [timer, timedout]
+}
 
 const concat = (bufs) => {
   const len = bufs.reduce((acc, b) => acc + b.byteLength, 0)
@@ -37,9 +50,100 @@ self.addEventListener('install', (event) => {
   self.skipWaiting()
 })
 
-self.addEventListener('activate', (event) => {
+let attestError = null
+let useAttestSession = null
+let attestWasmReady = false
+Module.onRuntimeInitialized = () => attestWasmReady = true
+
+const attestActivate = async () => {
+  if (useAttestSession) { return }
   console.log('sw activate')
+
+  // load sodium
+  let sodium = null
+  const [timer, timedout] = timeout(10_000)
+  const sodiumLoad = new Promise((res, rej) => {
+    timedout.catch((err) => rej(new Error('sodium load timeout')))
+    _sodium.ready.then(() => {
+      console.log('sw sodium ok')
+      sodium = _sodium
+      res()
+    }).catch(rej)
+  })
+
+  // load nitro_wasm
+  let interval = null
+  const attestLoad = () => new Promise((res, rej) => {
+    timedout.catch((err) => rej(new Error('nitro_wasm load timeout')))
+    const checkReady = () => {
+      if (!attestWasmReady) { return }
+      try {
+        const sum = Module._add(5, 7)
+        if (sum !== 12) { throw new Error(`nitro_wasm _add ${sum} != 12`) }
+        useAttest(Module, sodium, cookieStore).then((fn) => {
+          console.log('sw attest ok')
+          useAttestSession = fn
+          res()
+        }).catch(rej)
+      } catch (err) {
+        rej(err)
+      }
+    }
+    interval = setInterval(checkReady, 50)
+    checkReady()
+  })
+
+  const cleanup = () => {
+    clearTimeout(timer)
+    clearInterval(interval)
+  }
+
+  sodiumLoad
+    .then(attestLoad)
+    .catch((err) => attestError = err)
+    .finally(cleanup)
+}
+
+self.addEventListener('activate', (event) => {
+  attestActivate()
   event.waitUntil(self.clients.claim())
+})
+
+let app = null
+let attestPatterns = null
+
+const findPcrForHref = (href) => {
+  if (!attestPatterns) { return }
+  const match = attestPatterns.find((obj) => obj.pattern.test(href))
+  if (!match) { return }
+  return match.PCR
+}
+
+const sendAttestStatus = () => {
+  if (useAttestSession) {
+    app.postMessage({ type: 'attestReady' })
+    return
+  } else if (attestError) {
+    app.postMessage({ type: 'attestError', error: attestError.message })
+    console.log('sw attestError', attestError)
+    return
+  }
+  setTimeout(sendAttestStatus, 50)
+}
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type !== 'connect') { return }
+  app = event.ports[0]
+  attestActivate()
+  sendAttestStatus()
+  app.onmessage = (event) => {
+    if (event.data?.type !== 'config') { return }
+    attestPatterns = event.data.patterns.map((obj) => {
+      obj.pattern = new RegExp(obj.pattern)
+      return obj
+    })
+    app.postMessage({ type: 'config' })
+  }
 })
 
 // require cid match
@@ -176,6 +280,8 @@ const isIpfsCompanion = (url) => {
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url)
+  const PCR = findPcrForHref(url.href)
+  if (PCR) { return event.respondWith(useAttestSession(PCR, event)) }
   const selff = url.href.startsWith(self.location.origin)
   if (selff && DEV) { return }
   let gateway = selff ? null : (url.href.match(pathGatewayRegex) ?? url.href.match(subdomainGatewayRegex))
