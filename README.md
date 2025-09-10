@@ -40,12 +40,9 @@ npm --prefix javascript/ run dev
 ```
 
 ## Why is Rust involved
-You may be wondering about the rust/ dir or dist/nitro_wasm.wasm. The Rust allows IPFS-boot to support [attestation](https://en.wikipedia.org/wiki/Trusted_Computing#Remote_attestation) with AWS Nitro servers, so reproducible __clients and servers__, see:
-+ [lock.host](https://github.com/rhodey/lock.host)
-+ [lock.host-node](https://github.com/rhodey/lock.host-node)
-+ [lock.host-python](https://github.com/rhodey/lock.host-python)
+You may be wondering about the rust/ dir or dist/nitro_wasm.wasm. The Rust allows IPFS-boot to support [attestation](https://en.wikipedia.org/wiki/Trusted_Computing#Remote_attestation) with AWS Nitro servers, so reproducible __clients and servers__, see: [lock.host](https://github.com/rhodey/lock.host)
 
-Two files nitro_wasm.js and nitro_wasm.wasm are checked into source within javascript/assets/, these are tested by [github actions](https://github.com/rhodey/IPFS-boot/actions) and to build from source do:
+Two files nitro_wasm.js and nitro_wasm.wasm are checked into source within javascript/assets/, these are tested by [github actions](https://github.com/rhodey/IPFS-boot/actions), to build from source do:
 ```
 docker buildx build --platform=linux/amd64 -f Dockerfile.wasm -t ipfs-wasm .
 docker run --rm -i --platform=linux/amd64 -v ./dist:/root/dist ipfs-wasm
