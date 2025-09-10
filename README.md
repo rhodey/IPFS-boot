@@ -19,7 +19,7 @@ docker run --rm -i --platform=linux/amd64 -v ./dist:/root/dist ipfs-boot
 ```
 
 ## Pin
-Read [the guide](https://github.com/rhodey/IPFS-boot/blob/master/PIN.md) on choosing an IPFS pin service then
+Read [the guide](/PIN.md) on choosing an IPFS pin service then
 ```
 cp example.env .env
 docker buildx build --platform=linux/amd64 -f Dockerfile.pin -t ipfs-pin .
@@ -53,8 +53,6 @@ sha256sum javascript/assets/nitro_wasm.wasm
 sha256sum dist/nitro_wasm.wasm
 ```
 
-[Velo.xyz](https://velo.xyz) and [nijynot](https://github.com/nijynot) my coworker are due thanks for some AWS Nitro contributions
-
 ## Where is demo
 Please if you want to style the bootloader, open a PR ^.^
 
@@ -64,7 +62,7 @@ If you clicked "boot!" without reading: you can return to boot list anytime by a
 + choo https://bafybeicy423ftebxdz7bkkobwip54jghzxtuau4m3paj55x7kg27s7f3bm.ipfs.dweb.link
 
 ## FAQ
-[FAQ](https://github.com/rhodey/IPFS-boot/blob/master/FAQ.md)
+[FAQ](/FAQ.md)
 
 ## License
-MIT - Copyright 2025 - mike@rhodey.org
+MIT
