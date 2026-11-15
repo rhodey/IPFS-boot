@@ -2,7 +2,7 @@
 
 ## How to pin
 
-IMO there are two priorities:
+There are two priorities:
 
 1. host for users without IPFS browser extension.
 2. host for users with IPFS browser extension.
@@ -18,16 +18,27 @@ Cloudflare gets us fast, reliable loading.
 
 ## Cloudflare
 
-## Filebase
-
-[Signup here](https://console.filebase.com/signup?ref=210b7456eadf). At
-the time of writing this you can use a free account. Then "Buckets" ->
-Create Bucket -> Storage Type IPFS -> Import None. Remember the bucket
-name. Then "Access Keys" -> S3 Compatible API -> Access tokens.
++ [Signup here](https://dash.cloudflare.com/sign-up)
++ Type "R2" in the console search bar
++ Add a credit card which will be billed if you go over [free tier](https://developers.cloudflare.com/r2/pricing/#free-tier)
++ Create a bucket and enable CORS "*"
++ Manage API tokens > Create API token > Object Read & Write
 
 ```
 cp example.env .env
-(enter values for filebase bucket, access, secret)
+(enter values for api, access, secret)
+```
+
+## Filebase
+
++ [Signup here](https://console.filebase.com/signup?ref=210b7456eadf)
++ At time of writing you can stay free tier
++ "Buckets" -> Create Bucket -> Storage Type IPFS -> Import None
++ "Access Keys" -> S3 Compatible API -> Access tokens
+
+```
+(edit .env)
+(enter values for bucket, access, secret)
 ```
 
 ## License
