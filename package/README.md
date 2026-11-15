@@ -1,6 +1,8 @@
 # ipfs-boot
 
-Publish IPFS webapps which require user consent to update, see:
+Publish IPFS webapps which require user consent to update.
+
+**Think about: crypto texting apps, crypto-wallets, crypto-exchanges see:**
 
 + [IPFS-boot](https://github.com/rhodey/IPFS-boot)
 + [IPFS-boot-react](https://github.com/rhodey/IPFS-boot-react)
