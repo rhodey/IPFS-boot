@@ -6,7 +6,6 @@ Publish IPFS webapps which require user consent to update.
 
 + [IPFS-boot-react](https://github.com/rhodey/IPFS-boot-react)
 + [IPFS-boot-choo](https://github.com/rhodey/IPFS-boot-choo)
-+ [IPFS-boot-cloudflare](https://github.com/rhodey/IPFS-boot-cloudflare)
 
 ## How this works
 
