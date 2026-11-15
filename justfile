@@ -11,5 +11,5 @@ pin: prep-pin
     {{sudo}} docker run --rm -i -v ./dist:/root/dist:ro --env-file .env ipfs-pin
 
 dev:
-    npm --prefix javascript/ ci
-    npm --prefix javascript/ run dev
+    npm --prefix package/ ci
+    npm --prefix package/ run dev

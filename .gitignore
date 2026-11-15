@@ -3,5 +3,5 @@
 
 dist/
 
-javascript/dist
-javascript/node_modules
+package/dist
+package/node_modules

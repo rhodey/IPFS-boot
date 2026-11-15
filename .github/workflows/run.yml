@@ -23,11 +23,11 @@ jobs:
         with:
           node-version: '24.x'
           cache: npm
-          cache-dependency-path: javascript/package-lock.json
+          cache-dependency-path: package/package-lock.json
       - name: Test js
         run: |
-          npm --prefix javascript ci
-          npm --prefix javascript test
+          npm --prefix package ci
+          npm --prefix package test
       - uses: docker/setup-buildx-action@v3
       - name: Build js
         uses: docker/build-push-action@v6

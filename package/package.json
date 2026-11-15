@@ -13,8 +13,6 @@
   },
   "scripts": {
     "test": "tape test/*.js",
-    "prepublishOnly": "mv bin.md README.md",
-    "postpublish": "mv README.md bin.md",
     "copy": "cp -R index.html assets dist/ && mv dist/assets/_redirects dist/_redirects",
     "mini": "terser dist/bundle.js --compress --output dist/bundle.js",
     "swprod": "esbuild src/sw.js --bundle --target=es2022 --minify --outfile=dist/sw.js --define:DEV=\"false\"",

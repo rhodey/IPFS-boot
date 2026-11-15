@@ -28,9 +28,9 @@ EOF
 
 FROM node:24-alpine3.22@sha256:191c9f0080fcbbc6547a85dc0ff7988072214a355aabdc1d2ec55a7dae5eea8a AS build
 WORKDIR /app
-COPY javascript/package.json javascript/package-lock.json ./
+COPY package/package.json package/package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm npm ci --no-audit --no-fund
-COPY javascript/ ./
+COPY package/ ./
 RUN npm run build
 
 # Running the image only exports the already-built app and calculates its CID.

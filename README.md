@@ -30,8 +30,8 @@ which can restyle it.
 Style/change to your liking:
 
 ```
-npm --prefix javascript/ ci
-npm --prefix javascript/ run dev
+npm --prefix package/ ci
+npm --prefix package/ run dev
 ```
 
 ## Build
