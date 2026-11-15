@@ -3,7 +3,7 @@
 ### How are updates booted?
 
 The HTML, CSS, and JS of your app is dynamically added to the HTML DOM, what is being done is very
-similar to how "hot reload" works when developing React. Take a look at [package/src/index.js](/javascript/src/index.js)
+similar to how "hot reload" works when developing React. Take a look at [package/src/index.js](/package/src/index.js)
 it is only 350 lines.
 
 ### Why is IPFS-boot written with choo?
@@ -13,7 +13,7 @@ choo is my favorite.
 
 ### What to do before prod?
 
-Search [package/src/index.js](/javascript/src/index.js) and [package/src/sw.js](/javascript/src/sw.js)
+Search [package/src/index.js](/package/src/index.js) and [package/src/sw.js](/package/src/sw.js)
 for "todo" (about 5 items).
 
 Then: [IPFS-boot-react](https://github.com/rhodey/IPFS-boot-react) or [IPFS-boot-choo](https://github.com/rhodey/IPFS-boot-choo).
