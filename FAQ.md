@@ -4,11 +4,6 @@
 ### How are updates booted
 The HTML, CSS, and JS of your app is dynamically added to the HTML DOM, what is being done is very similar to how "hot reload" works when developing angular or react. Take a look at [javascript/src/index.js](/javascript/src/index.js) it is only 350 lines.
 
-### What are some examples of attestation
-+ [Signal uses attestation](https://signal.org/blog/private-contact-discovery/) to provide private contact discovery
-+ [Attest.link](https://attest.link) is a domain I bought to do something with headless browsers and screenshots
-+ There is a lot of room in this space and I am not keen to give up all ideas
-
 ### Why is IPFS-boot written with choo
 You dont need to write your app with [choo](https://github.com/choojs/choo) but you might enjoy it, choo is preferred because it has low barrier to entry
 
