@@ -2,10 +2,7 @@
 
 Publish IPFS webapps which require user consent to update.
 
-**Think about: encrypted texting apps and crypto-wallets, see:**
-
-
-
+**Think about: crypto texting apps, crypto-wallets, crypto-exchanges see:**
 
 + [IPFS-boot-react](https://github.com/rhodey/IPFS-boot-react)
 + [IPFS-boot-choo](https://github.com/rhodey/IPFS-boot-choo)
