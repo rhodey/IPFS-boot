@@ -1,25 +1,35 @@
 # IPFS-boot
+
 Publish IPFS webapps which require user consent to update, see:
+
 + [IPFS-boot-react](https://github.com/rhodey/IPFS-boot-react)
 + [IPFS-boot-choo](https://github.com/rhodey/IPFS-boot-choo)
 + [IPFS-boot-cloudflare](https://github.com/rhodey/IPFS-boot-cloudflare)
 
 ## How this works
-This repo contains a sort of web bootloader, you will style this repo as you like and then you will publish this repo and your app to IPFS. Your app is a fork of IPFS-boot-react or IPFS-boot-choo. You will host a file versions.json on any http server and inside this file an array of items describe versions of your app which users choose from.
 
-It is intended that you share the source of your fork of IPFS-boot and IPFS-boot-react or IPFS-boot-choo. The sources allow users to build and see the IPFS CID (a hash) you publish is the same as what they get from source. The CID of IPFS-boot will be the URL of your app, the CID of each version of your app goes in versions.json, and the bootloader polls this file.
+1. Deploy a smaller version of React hot-code-reloading (bootloader (immutable))
+2. Point the bootloader to a .json URL which has a list of app versions
+3. Users visit your app using the bootloader CID/hash/address (immutable)
+4. Devs push new versions to the .json URL and users accept/reject (mutable)
 
-The bootloader only gets published once but your app updates can include CSS which styles the bootloader. This all actually works, and it works offline(!), give it a try.
+It is intended that you share the source of your fork of IPFS-boot and IPFS-boot-react or IPFS-boot-choo. The sources allow users to build and see the IPFS CID (a hash) you publish is the same as what they get from source. The CID of IPFS-boot will be the URL of your app, the CID of each update to your app (-react, -choo) goes in versions.json, and the bootloader polls this file.
+
+The bootloader only gets published once but app updates (user accepted) load JS/CSS which can restyle the bootloader.
 
 ## Build
+
 The aim is reproducible builds so docker is involved
+
 ```
 docker buildx build --platform=linux/amd64 -t ipfs-boot .
 docker run --rm -i --platform=linux/amd64 -v ./dist:/root/dist ipfs-boot
 ```
 
 ## Pin
+
 Read [the guide](/PIN.md) on choosing an IPFS pin service then
+
 ```
 cp example.env .env
 docker buildx build --platform=linux/amd64 -f Dockerfile.pin -t ipfs-pin .
@@ -33,24 +43,16 @@ docker run --rm -i --platform=linux/amd64 -v ./dist:/root/dist --env-file .env i
 Your bootloader is now live and discoverable with v0 and v1 CIDs, see [gateways](https://ipfs.github.io/public-gateway-checker/)
 
 ## Dev
+
 [http://localhost:8080](http://localhost:8080/) for quicker iterations on the bootloader
+
 ```
 npm --prefix javascript/ install
 npm --prefix javascript/ run dev
 ```
 
-## Why is Rust involved
-You may be wondering about the rust/ dir or dist/nitro_wasm.wasm. The Rust allows IPFS-boot to support [attestation](https://en.wikipedia.org/wiki/Trusted_Computing#Remote_attestation) with AWS Nitro servers, so reproducible __clients and servers__, see: [lock.host](https://github.com/rhodey/lock.host)
-
-Two files nitro_wasm.js and nitro_wasm.wasm are checked into source within javascript/assets/, these are tested by [github actions](https://github.com/rhodey/IPFS-boot/actions), to build from source do:
-```
-docker buildx build --platform=linux/amd64 -f Dockerfile.wasm -t ipfs-wasm .
-docker run --rm -i --platform=linux/amd64 -v ./dist:/root/dist ipfs-wasm
-sha256sum javascript/assets/nitro_wasm.wasm
-sha256sum dist/nitro_wasm.wasm
-```
-
 ## Where is demo
+
 Please if you want to style the bootloader, open a PR ^.^
 
 If you clicked "boot!" without reading: you can return to boot list anytime by add #boot to the url
