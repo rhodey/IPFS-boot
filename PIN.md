@@ -21,8 +21,9 @@ Cloudflare gets us fast, reliable loading.
 + [Signup here](https://dash.cloudflare.com/sign-up)
 + Type "R2" in the console search bar
 + Add a credit card which will be billed if you go over [free tier](https://developers.cloudflare.com/r2/pricing/#free-tier)
-+ Create a bucket and enable CORS "*"
-+ Manage API tokens > Create API token > Object Read & Write
++ Enable Public Development URL and CORS "*"
++ Type "R2 API" in the console search bar
++ API tokens > Create API token > Object Read & Write
 
 ```
 cp example.env .env
