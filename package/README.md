@@ -16,7 +16,7 @@ npx ipfs-boot publish --cid $CID --version v0.0.1 --notes "release notes"
 cat versions.json
 ```
 
-Running init multiple times allows to overwrite the repo href and app name
+Running init multiple times allows updating the repo href and app name:
 
 ```
 npx ipfs-boot init https://github.com/user/react1234 react1234
