@@ -13,7 +13,7 @@ Publish IPFS webapps which require user consent to update, see:
 3. Users visit your app using the bootloader CID/hash/address (immutable)
 4. Devs push new versions to the .json URL and users accept/reject (mutable)
 
-It is intended that you share the source of your fork of IPFS-boot and IPFS-boot-react or IPFS-boot-choo. The sources allow users to build and see the IPFS CID (a hash) you publish is the same as what they get from source. The CID of IPFS-boot will be the URL of your app, the CID of each update to your app (-react, -choo) goes in versions.json, and the bootloader polls this file.
+It is intended that you share the sources of your fork of IPFS-boot and IPFS-boot-react or IPFS-boot-choo. The sources allow users to build and see the IPFS CID (a hash) you publish is the same as what they get from source. The CID of IPFS-boot will be the URL of your app, the CID of each update to your app (-react, -choo) goes in versions.json, and the bootloader polls this file.
 
 The bootloader only gets published once but app updates (user accepted) load JS/CSS which can restyle the bootloader.
 
