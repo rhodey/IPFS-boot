@@ -45,7 +45,7 @@ docker run --rm -i -v ./dist:/root/dist ipfs-boot
 
 ## Pin
 
-Read [the guide](/PIN.md) on choosing an IPFS pin service then:
+Read [the guide](/PIN.md) on choosing an IPFS pinning service then:
 
 ```
 cp example.env .env
@@ -63,7 +63,7 @@ see: [gateways](https://ipfs.github.io/public-gateway-checker/).
 ## Where is demo
 
 If you click "boot!" without reading: you can return to boot list
-anytime by add #boot to the url
+anytime by add #boot to the url:
 
 + react https://bafybeifehbm2um54qvfifprtbkgbt25ndkq6k26zjlbe33t2j62gdjwn2m.ipfs.dweb.link
 + choo https://bafybeibbwz7bew6l3e5lsgneebvhfe63qclvhygkmh6ba7nk566a4qdy7i.ipfs.dweb.link
