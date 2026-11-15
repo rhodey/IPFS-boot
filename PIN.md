@@ -4,8 +4,8 @@
 
 There are two priorities:
 
-1. host for users without IPFS browser extension.
-2. host for users with IPFS browser extension.
+1. Host for users without IPFS browser extension.
+2. Host for users with IPFS browser extension.
 
 To do this we'll use [Cloudflare R2](https://www.cloudflare.com/products/r2/)
 plus [Filebase](https://console.filebase.com/signup?ref=210b7456eadf).
