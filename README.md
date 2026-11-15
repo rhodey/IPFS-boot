@@ -48,7 +48,6 @@ docker run --rm -i -v ./dist:/root/dist ipfs-boot
 Read [the guide](/PIN.md) on choosing an IPFS pinning service then:
 
 ```
-cp example.env .env
 docker buildx build --load -f Dockerfile.pin -t ipfs-pin .
 docker run --rm -i -v ./dist:/root/dist:ro --env-file .env ipfs-pin
 > CIDv0 = QmQcFZUsp47bckyJTwzL6mr4HWNrGvdnRW6Z95jJbxC5bF
