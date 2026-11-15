@@ -1,8 +1,10 @@
 .env*
 *.swp
 
-index.html
-test/
-
 dist/
 assets/
+test/
+index.html
+
+src/**/*.js
+!src/bin.js
