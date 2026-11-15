@@ -1,24 +1,25 @@
 # IPFS-boot
+
 ## FAQ
 
-### How are updates booted
-The HTML, CSS, and JS of your app is dynamically added to the HTML DOM, what is being done is very similar to how "hot reload" works when developing angular or react. Take a look at [javascript/src/index.js](/javascript/src/index.js) it is only 350 lines.
+### How are updates booted?
 
-### Why is IPFS-boot written with choo
-You dont need to write your app with [choo](https://github.com/choojs/choo) but you might enjoy it, choo is preferred because it has low barrier to entry
+The HTML, CSS, and JS of your app is dynamically added to the HTML DOM, what is being done is very similar to how "hot reload" works when developing React. Take a look at [javascript/src/index.js](/javascript/src/index.js) it is only 350 lines.
 
-### How to style IPFS-boot in an app update
-The HTML and CSS which IPFS-boot uses can be seen in [javascript/src/view.js](/javascript/src/view.js) and [javascript/assets/style.css](/javascript/assets/style.css)
+### Why is IPFS-boot written with choo?
 
-Include in your update /_static/boot.css with rules which target the HTML elements
+You dont need to write your app with [choo](https://github.com/choojs/choo) but you might enjoy it, choo is my favorite.
 
-### What to do before prod
-Search [javascript/src/index.js](/javascript/src/index.js) and [javascript/src/sw.js](/javascript/src/sw.js) for "todo" (about 5 items)
+### What to do before prod?
 
-### Downsides
+Search [javascript/src/index.js](/javascript/src/index.js) and [javascript/src/sw.js](/javascript/src/sw.js) for "todo" (about 5 items).
+
+### Downsides?
+
 This could have been figured out sooner!
 
-[bybit loses 1.5B](https://news.ycombinator.com/item?id=43140754), [brave removes ipfs](https://news.ycombinator.com/item?id=41381593)
+[bybit hacked](https://news.ycombinator.com/item?id=43140754), [polymarket hacked](https://www.securityweek.com/polymarket-returns-3-9-million-to-traders-as-debugbear-cites-dns-hijack/)
 
 ### License
+
 MIT
