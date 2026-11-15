@@ -18,7 +18,7 @@ Search [javascript/src/index.js](/javascript/src/index.js) and [javascript/src/s
 
 This could have been figured out sooner!
 
-[bybit hacked](https://news.ycombinator.com/item?id=43140754), [polymarket hacked](https://www.securityweek.com/polymarket-returns-3-9-million-to-traders-as-debugbear-cites-dns-hijack/)
+[bybit hacked](https://news.ycombinator.com/item?id=43140754), [polymarket hacked](https://www.securityweek.com/polymarket-returns-3-9-million-to-traders-as-debugbear-cites-dns-hijack/).
 
 ### License
 
