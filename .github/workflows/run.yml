@@ -2,84 +2,81 @@ name: Run
 
 on:
   push:
-    branches:
-      - master
+    branches: [master]
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
-    branches:
-      - master
+    branches: [master]
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: amd64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
-      - name: Check cert
-        run: |
-          mkdir download && cd download/
-          curl https://aws-nitro-enclaves.amazonaws.com/AWS_NitroEnclaves_Root-G1.zip > root.zip
-          unzip root.zip
-          sha256sum root.pem > hash.txt
-          sha256sum ../javascript/assets/root.pem >> hash.txt
-          sha256sum --check hash.txt || exit 1
-
-      - name: Install node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
-
-      - name: Test node
+          node-version: '24.x'
+          cache: npm
+          cache-dependency-path: javascript/package-lock.json
+      - name: Test js
         run: |
-          npm --prefix javascript/ install
-          npm --prefix javascript/ run test
-
-      - name: Build webapp
-        run: |
-          docker buildx build --platform=linux/amd64 -t ipfs-boot .
-          docker run --rm -i --platform=linux/amd64 -v ./dist:/root/dist ipfs-boot | tee out.txt
-
-      - name: Check CIDv0
-        run: |
-          a=$(cat out.txt | grep CIDv0 | awk '{print $3}')
-          b=$(cat README.md | grep CIDv0 | awk '{print $4}')
-          bash -c '[[ "$1" == "$2" ]]' _ "$a" "$b" || exit 1
-
-      - name: Check CIDv1
-        run: |
-          a=$(cat out.txt | grep CIDv1 | awk '{print $3}')
-          b=$(cat README.md | grep CIDv1 | awk '{print $4}')
-          bash -c '[[ "$1" == "$2" ]]' _ "$a" "$b" || exit 1
-
-      - name: Check Link 1
-        run: |
-          a=$(cat README.md | grep dweb.link | grep done | awk '{print $3}')
-          b=$(cat out.txt | grep CIDv1 | awk '{print $3}')
-          b="https://$b.ipfs.dweb.link"
-          bash -c '[[ "$1" == "$2" ]]' _ "$a" "$b" || exit 1
-
-      - name: Check Link 2
-        run: |
-          a=$(cat README.md | grep dweb.link | grep choo | awk '{print $3}')
-          b=$(cat out.txt | grep CIDv1 | awk '{print $3}')
-          b="https://$b.ipfs.dweb.link"
-          bash -c '[[ "$1" == "$2" ]]' _ "$a" "$b" || exit 1
-
-      - name: Build wasm
-        run: |
-          docker buildx build --platform=linux/amd64 -f Dockerfile.wasm -t ipfs-wasm .
-          docker run --rm -i --platform=linux/amd64 -v ./dist:/root/dist ipfs-wasm
-
-      - name: Check wasm
-        run: |
-          sha256sum dist/nitro_wasm.wasm > hash.txt
-          sha256sum javascript/assets/nitro_wasm.wasm >> hash.txt
-          sha256sum --check hash.txt || exit 1
-          sha256sum dist/nitro_wasm.js > hash.txt
-          sha256sum javascript/assets/nitro_wasm.js >> hash.txt
-          sha256sum --check hash.txt || exit 1
-
-      - name: Zip
-        uses: actions/upload-artifact@v4
+          npm --prefix javascript ci
+          npm --prefix javascript test
+      - uses: docker/setup-buildx-action@v3
+      - name: Build js
+        uses: docker/build-push-action@v6
         with:
-          name: dist
-          path: dist/
+          context: .
+          load: true
+          tags: ipfs-boot
+          cache-from: type=gha,scope=boot-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=boot-${{ matrix.arch }}
+      - name: Export and check clean output
+        run: |
+          mkdir -p dist
+          touch dist/obsolete.js dist/.obsolete
+          docker run --rm --network=none -v ./dist:/root/dist ipfs-boot | tee cid.txt
+          test ! -e dist/obsolete.js
+          test ! -e dist/.obsolete
+          docker run --rm --network=none -v ./dist-again:/root/dist ipfs-boot > cid-again.txt
+          diff -r dist dist-again
+          cmp cid.txt cid-again.txt
+      - name: Build pin tools
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.pin
+          load: true
+          tags: ipfs-pin
+          cache-from: type=gha,scope=pin-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=pin-${{ matrix.arch }}
+      - name: Check pin tools offline
+        run: |
+          docker run --rm --network=none ipfs-pin sh -ec 'ipfs version; aws --version'
+          if docker run --rm --network=none ipfs-pin; then
+            echo 'Pinning without a configured provider must fail'
+            exit 1
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.arch }}
+          path: |
+            dist/
+            cid.txt
+
+  reproducibility:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: dist-*
+          path: outputs
+      - name: Compare native AMD64 and ARM64 builds
+        run: diff -r outputs/dist-amd64 outputs/dist-arm64

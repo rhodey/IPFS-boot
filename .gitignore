@@ -5,4 +5,3 @@ dist/
 
 javascript/dist
 javascript/node_modules
-rust/target

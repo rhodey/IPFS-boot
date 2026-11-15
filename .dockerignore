@@ -10,6 +10,3 @@ javascript/src/*.swp
 javascript/test/*.swp
 javascript/dist
 javascript/node_modules
-
-rust/src/*.swp
-rust/target
