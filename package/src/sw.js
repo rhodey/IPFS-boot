@@ -63,9 +63,8 @@ const verify = async (target, fname, buf) => {
   return buf
 }
 
-// todo: replace with your cloudflare bucket or worker
-// todo: if no cloudflare replace with empty array
-const fast = ['https://ipfs.lock.host']
+// todo: replace with your cloudflare bucket public URL
+const fast = ['https://pub-daf36e7ba4504fa99be07f38a5333717.r2.dev']
 
 // public gateways as fallbacks
 const maybeFast = ['https://trustless-gateway.link', 'https://dweb.link']

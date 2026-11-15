@@ -37,7 +37,9 @@ COPY --chmod=755 <<'EOF' /usr/local/bin/pin-dist
 #!/bin/sh
 set -eu
 
-if [ -z "${pin_api:-}${pin_filebase_bucket:-}" ]; then
+cloudflare="${pin_cloudflare_api:-}${pin_cloudflare_access:-}${pin_cloudflare_secret:-}"
+filebase="${pin_filebase_bucket:-}${pin_filebase_access:-}${pin_filebase_secret:-}"
+if [ -z "$cloudflare$filebase" ]; then
   echo "Configure at least one pin service in .env (see PIN.md)." >&2
   exit 1
 fi
@@ -45,11 +47,25 @@ if [ ! -d /root/dist ] || [ -z "$(ls -A /root/dist)" ]; then
   echo "Mount a nonempty build directory at /root/dist." >&2
   exit 1
 fi
-if [ -n "${pin_api:-}" ]; then
-  : "${pin_token:?Set pin_token for the remote pinning service}"
+if [ -n "$cloudflare" ]; then
+  : "${pin_cloudflare_api:?Set pin_cloudflare_api}" "${pin_cloudflare_access:?Set pin_cloudflare_access}" "${pin_cloudflare_secret:?Set pin_cloudflare_secret}"
+  # The configured URL includes the bucket; AWS CLI takes it separately.
+  api=${pin_cloudflare_api%/}
+  cloudflare_endpoint=${api%/*}
+  cloudflare_bucket=${api##*/}
+  case "$api" in
+    https://*/*|http://*/*) ;;
+    *) echo "pin_cloudflare_api must be an HTTP(S) endpoint followed by /bucket-name." >&2; exit 1 ;;
+  esac
+  case "${cloudflare_endpoint#*://}" in
+    ''|*[/?#@]*) echo "pin_cloudflare_api must contain exactly one bucket path." >&2; exit 1 ;;
+  esac
+  case "$cloudflare_bucket" in
+    ''|*[!a-z0-9.-]*) echo "Invalid bucket name in pin_cloudflare_api." >&2; exit 1 ;;
+  esac
 fi
-if [ -n "${pin_filebase_bucket:-}" ]; then
-  : "${pin_filebase_access:?Set pin_filebase_access}" "${pin_filebase_secret:?Set pin_filebase_secret}"
+if [ -n "$filebase" ]; then
+  : "${pin_filebase_bucket:?Set pin_filebase_bucket}" "${pin_filebase_access:?Set pin_filebase_access}" "${pin_filebase_secret:?Set pin_filebase_secret}"
 fi
 
 ipfs init >/dev/null
@@ -58,36 +74,33 @@ cb32=$(ipfs cid base32 "$cid")
 echo "CIDv0 = $cid"
 echo "CIDv1 = $cb32"
 
-# Filebase uploads a CAR; only native remote pinning needs a daemon.
-if [ -n "${pin_filebase_bucket:-}" ]; then
-  ipfs dag export "$cb32" > /tmp/dist.car
+if [ -n "$cloudflare" ]; then
+  # Keep both printed root CIDs and the CID forms embedded in directory links.
+  printf '%s\n%s\n' "$cid" "$cb32" > /tmp/cids
+  ipfs --offline refs --recursive --unique "$cb32" >> /tmp/cids
+  sort -u /tmp/cids > /tmp/unique-cids
+  (
+    export AWS_DEFAULT_REGION=auto
+    export AWS_ACCESS_KEY_ID="$pin_cloudflare_access"
+    export AWS_SECRET_ACCESS_KEY="$pin_cloudflare_secret"
+    while IFS= read -r block; do
+      ipfs --offline block get "$block" > /tmp/block
+      aws --endpoint-url "$cloudflare_endpoint" s3 cp /tmp/block \
+        "s3://$cloudflare_bucket/ipfs/$block" --content-type application/vnd.ipld.raw --only-show-errors
+    done < /tmp/unique-cids
+  )
+  echo "Cloudflare: uploaded $(wc -l < /tmp/unique-cids | tr -d ' ') blocks."
 fi
 
-if [ -n "${pin_api:-}" ]; then
-  ipfs daemon > /tmp/ipfs-daemon.log 2>&1 &
-  daemon_pid=$!
-  trap 'kill "$daemon_pid" 2>/dev/null || true; wait "$daemon_pid" 2>/dev/null || true' EXIT
-  trap 'exit 1' INT TERM
-  attempts=0
-  until ipfs --api=/ip4/127.0.0.1/tcp/5001 id >/dev/null 2>&1; do
-    attempts=$((attempts + 1))
-    if [ "$attempts" -ge 30 ] || ! kill -0 "$daemon_pid" 2>/dev/null; then
-      cat /tmp/ipfs-daemon.log >&2
-      exit 1
-    fi
-    sleep 1
-  done
-  ipfs pin remote service add my_pin "$pin_api" "$pin_token"
-  echo "Waiting for remote pinning; reachability through NAT can affect completion."
-  ipfs pin remote add --service=my_pin "$cb32"
-fi
-
-if [ -n "${pin_filebase_bucket:-}" ]; then
-  export AWS_DEFAULT_REGION=us-east-1
-  export AWS_ACCESS_KEY_ID="$pin_filebase_access"
-  export AWS_SECRET_ACCESS_KEY="$pin_filebase_secret"
-  aws --endpoint-url https://s3.filebase.com s3 cp /tmp/dist.car \
-    "s3://$pin_filebase_bucket/$cb32" --metadata 'import=car'
+if [ -n "$filebase" ]; then
+  ipfs --offline dag export "$cb32" > /tmp/dist.car
+  (
+    export AWS_DEFAULT_REGION=us-east-1
+    export AWS_ACCESS_KEY_ID="$pin_filebase_access"
+    export AWS_SECRET_ACCESS_KEY="$pin_filebase_secret"
+    aws --endpoint-url https://s3.filebase.com s3 cp /tmp/dist.car \
+      "s3://$pin_filebase_bucket/$cb32" --metadata 'import=car'
+  )
 fi
 
 echo "done: https://$cb32.ipfs.dweb.link/"

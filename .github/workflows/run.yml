@@ -59,10 +59,7 @@ jobs:
       - name: Check pin tools offline
         run: |
           docker run --rm --network=none ipfs-pin sh -ec 'ipfs version; aws --version'
-          if docker run --rm --network=none ipfs-pin; then
-            echo 'Pinning without a configured provider must fail'
-            exit 1
-          fi
+          docker run --rm --network=none -v ./package/test/pin.py:/tests/pin.py:ro ipfs-pin python3 /tests/pin.py
       - uses: actions/upload-artifact@v4
         with:
           name: dist-${{ matrix.arch }}
