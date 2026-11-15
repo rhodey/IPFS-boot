@@ -1,34 +1,35 @@
 # IPFS-boot
 
-## Where to pin
+## How to pin
 
-As of writing there are two suggestions
-+ [Filebase](https://console.filebase.com/signup?ref=210b7456eadf) - start uploading with just email
-+ [Storacha](http://storacha.network/referred?refcode=Pg7g8WLjwLKGJNgm) - wants email and card on file then start uploading
+IMO there are two priorities:
 
-If you want to read more about IPFS pinning see [here](https://docs.ipfs.tech/how-to/work-with-pinning-services/) and [gateways](https://ipfs.github.io/public-gateway-checker/)
+1. host for users without IPFS browser extension.
+2. host for users with IPFS browser extension.
 
-Storacha is a fine place to pin your __app__ but their gateway will not serve __the bootloader__ due to [csp headers](https://blog.web3.storage/posts/badbits-and-goodbits-csp-in-w3link)
+To do this we'll use [Cloudflare R2](https://www.cloudflare.com/products/r2/)
+plus [Filebase](https://console.filebase.com/signup?ref=210b7456eadf).
+Even if we only care about #1 Filebase is what gets your app onto
+public IPFS [gateways](https://ipfs.github.io/public-gateway-checker/)
+where you don't need DNS. The way we use Cloudflare R2 its going to
+serve IPFS protocol chunks for your webapp but it won't be in charge
+of serving index.html. The result is Filebase gets us discovery while
+Cloudflare gets us fast, reliable loading.
 
-## How to configure
+## Cloudflare
 
-The contents of example.env look like this
+## Filebase
+
+[Signup here](https://console.filebase.com/signup?ref=210b7456eadf). At
+the time of writing this you can use a free account. Then "Buckets" ->
+Create Bucket -> Storage Type IPFS -> Import None. Remember the bucket
+name. Then "Access Keys" -> S3 Compatible API -> Access tokens.
 
 ```
-pin_api=
-pin_token=
-pin_filebase_bucket=abc123
-pin_filebase_access=abc123
-pin_filebase_secret=abc123
-pin_storacha_email=user@email.com
-pin_storacha_space=did:key:abc123
+cp example.env .env
+(enter values for filebase bucket, access, secret)
 ```
 
-+ run cp example.env .env and open .env to edit
-+ if pin_api is nonempty the native ipfs upload method will be attempted (slow)
-+ if pin_filebase_bucket is nonempty the filebase method will be used (fast)
-+ if more than one is set they both pin = more peers
-
-### License
+## License
 
 MIT
