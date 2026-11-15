@@ -23,6 +23,14 @@ IPFS-boot will be the URL of your app, the CID of each update to your app
 The bootloader only gets published once but app updates (accepted) load JS/CSS
 which can restyle it.
 
+## Demos
+
+If you click "boot!" without reading: you can return to boot list
+anytime by add #boot to the url:
+
++ react https://bafybeifehbm2um54qvfifprtbkgbt25ndkq6k26zjlbe33t2j62gdjwn2m.ipfs.dweb.link
++ choo https://bafybeibbwz7bew6l3e5lsgneebvhfe63qclvhygkmh6ba7nk566a4qdy7i.ipfs.dweb.link
+
 ## Dev
 
 [http://localhost:8080](http://localhost:8080/) will serve the bootloader.
@@ -44,7 +52,7 @@ docker run --rm -i -v ./dist:/root/dist ipfs-boot
 
 ## Pin
 
-Read [the guide](/PIN.md) on choosing an IPFS pinning service then:
+Read [PIN.md](/PIN.md) to configure IPFS pinning then:
 
 ```
 docker buildx build --load -f Dockerfile.pin -t ipfs-pin .
@@ -59,14 +67,6 @@ Your bootloader is now live and discoverable with v0 and v1 CIDs,
 see: [gateways](https://ipfs.github.io/public-gateway-checker/).
 
 See: [FAQ - What to do before prod?](https://github.com/rhodey/IPFS-boot/blob/2.0.0/FAQ.md#what-to-do-before-prod)
-
-## Demos
-
-If you click "boot!" without reading: you can return to boot list
-anytime by add #boot to the url:
-
-+ react https://bafybeifehbm2um54qvfifprtbkgbt25ndkq6k26zjlbe33t2j62gdjwn2m.ipfs.dweb.link
-+ choo https://bafybeibbwz7bew6l3e5lsgneebvhfe63qclvhygkmh6ba7nk566a4qdy7i.ipfs.dweb.link
 
 ## License
 
