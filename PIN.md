@@ -13,7 +13,7 @@ Even if we only care about #1 Filebase is what gets your app onto
 public IPFS [gateways](https://ipfs.github.io/public-gateway-checker/)
 where you don't need DNS. The way we use Cloudflare R2 its going to
 serve IPFS protocol chunks for your webapp but it won't be in charge
-of serving index.html. The result is Filebase gets us discovery while
+of serving `/`. The result is Filebase gets us discovery while
 Cloudflare gets us fast, reliable loading.
 
 ## Cloudflare
