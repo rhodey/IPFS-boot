@@ -134,8 +134,9 @@ if [ -n "$filebase" ]; then
     export AWS_ACCESS_KEY_ID="$pin_filebase_access"
     export AWS_SECRET_ACCESS_KEY="$pin_filebase_secret"
     aws --endpoint-url https://s3.filebase.com s3 cp /tmp/dist.car \
-      "s3://$pin_filebase_bucket/$cb32" --metadata 'import=car'
+      "s3://$pin_filebase_bucket/$cb32" --metadata 'import=car' --only-show-errors
   )
+  echo "Filebase: uploaded CAR."
 fi
 
 if [ -n "$bootloader" ] && [ -n "${pin_cloudflare_api_dev_url:-}" ]; then

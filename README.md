@@ -28,8 +28,8 @@ which can restyle it.
 If you click "boot!" without reading: you can return to boot list
 anytime by add #boot to the url:
 
-+ React https://bafybeifehbm2um54qvfifprtbkgbt25ndkq6k26zjlbe33t2j62gdjwn2m.ipfs.dweb.link
-+ Choo https://bafybeibbwz7bew6l3e5lsgneebvhfe63qclvhygkmh6ba7nk566a4qdy7i.ipfs.dweb.link
++ React https://bafybeihq2h235llbpc5aaityfacxszl2oxujvyw2zwhdrbvfoi6ytynuty.ipfs.dweb.link
++ Choo https://bafybeifhc32ghpylhfhkmf4kbxlx6ixwj4vbvwki3c6eku2hlwznxue5fm.ipfs.dweb.link
 
 ## Dev
 
@@ -57,10 +57,12 @@ Read [PIN.md](/PIN.md) to configure IPFS pinning then:
 ```
 docker buildx build --load -f Dockerfile.pin -t ipfs-pin .
 docker run --rm -i -v ./dist:/root/dist:ro --env-file .env ipfs-pin pin-dist --boot
-> CIDv0 = QmQcFZUsp47bckyJTwzL6mr4HWNrGvdnRW6Z95jJbxC5bF
-> CIDv1 = bafybeibbwz7bew6l3e5lsgneebvhfe63qclvhygkmh6ba7nk566a4qdy7i
-> upload: ../dist.car to s3://bucket-name/bafybeibbwz7bew6l3e5lsgneebvhfe63qclvhygkmh6ba7nk566a4qdy7i
-> done: https://bafybeibbwz7bew6l3e5lsgneebvhfe63qclvhygkmh6ba7nk566a4qdy7i.ipfs.dweb.link
+> CIDv0 = QmZau6Y778BfWJi9R5DRFiUTcHnfAFw9DqCqd4w5GQYh4v
+> CIDv1 = bafybeifhc32ghpylhfhkmf4kbxlx6ixwj4vbvwki3c6eku2hlwznxue5fm
+> Cloudflare: uploaded 9 blocks.
+> Cloudflare: uploaded bootloader website files.
+> Filebase: uploaded CAR.
+> done: https://pub-daf36e7ba4504fa99be07f38a5333717.r2.dev/index.html
 ```
 
 Your bootloader is now live and discoverable with v0 and v1 CIDs,
