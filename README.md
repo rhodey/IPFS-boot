@@ -28,8 +28,8 @@ which can restyle it.
 If you click "boot!" without reading: you can return to boot list
 anytime by add #boot to the url:
 
-+ React https://bafybeihq2h235llbpc5aaityfacxszl2oxujvyw2zwhdrbvfoi6ytynuty.ipfs.dweb.link
-+ Choo https://bafybeifhc32ghpylhfhkmf4kbxlx6ixwj4vbvwki3c6eku2hlwznxue5fm.ipfs.dweb.link
++ React https://bafybeidquva2qhtucrhvohmu5deggqxokqvdgbpv5voza5ghd3pjeyixsm.ipfs.dweb.link
++ Choo https://bafybeifym2gfx7vcf7mo725u7bakvcy4xumk6s4uwh3ew5gsjyghn7erhy.ipfs.dweb.link
 
 ## Dev
 
@@ -57,12 +57,12 @@ Read [PIN.md](/PIN.md) to configure IPFS pinning then:
 ```
 docker buildx build --load -f Dockerfile.pin -t ipfs-pin .
 docker run --rm -i -v ./dist:/root/dist:ro --env-file .env ipfs-pin pin-dist --boot
-> CIDv0 = QmZau6Y778BfWJi9R5DRFiUTcHnfAFw9DqCqd4w5GQYh4v
-> CIDv1 = bafybeifhc32ghpylhfhkmf4kbxlx6ixwj4vbvwki3c6eku2hlwznxue5fm
+> CIDv0 = QmakURKcgJp7RNjMcFsacKXn1ZjLchPce9hdiZxessqdaM
+> CIDv1 = bafybeifym2gfx7vcf7mo725u7bakvcy4xumk6s4uwh3ew5gsjyghn7erhy
 > Cloudflare: uploaded 9 blocks.
 > Cloudflare: uploaded bootloader website files.
 > Filebase: uploaded CAR.
-> done: https://bafybeifhc32ghpylhfhkmf4kbxlx6ixwj4vbvwki3c6eku2hlwznxue5fm.ipfs.dweb.link/
+> done: https://bafybeifym2gfx7vcf7mo725u7bakvcy4xumk6s4uwh3ew5gsjyghn7erhy.ipfs.dweb.link/
 ```
 
 Your bootloader is now live and discoverable with v0 and v1 CIDs,
