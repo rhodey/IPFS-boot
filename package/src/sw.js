@@ -69,6 +69,11 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim())
 })
 
+self.addEventListener('message', (event) => {
+  if (event.data !== 'ipfs-boot:claim') { return }
+  event.waitUntil(self.clients.claim())
+})
+
 // require cid match
 const equal = (str1, str2) => {
   const c1 = CID.parse(str1)

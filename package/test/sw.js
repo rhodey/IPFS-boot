@@ -14,7 +14,7 @@ function worker({ files = {}, cached = {}, origin = 'https://boot.example' } = {
   const handlers = {}
   const requests = []
   const entries = new Map(Object.entries(cached).map(([url, body]) => [new URL(url, origin).href, new Response(body)]))
-  const state = { claimed: false, skipped: false }
+  const state = { claimed: false, claims: 0, skipped: false }
   const waits = []
   const key = (url) => new URL(typeof url === 'string' ? url : url.url, origin).href
   const fetch = async (url) => {
@@ -39,7 +39,7 @@ function worker({ files = {}, cached = {}, origin = 'https://boot.example' } = {
       location: { origin },
       addEventListener: (name, handler) => { handlers[name] = handler },
       skipWaiting: () => { state.skipped = true },
-      clients: { claim: async () => { state.claimed = true } }
+      clients: { claim: async () => { state.claimed = true; state.claims++ } }
     },
     caches: {
       open: async () => cache,
@@ -55,6 +55,12 @@ function worker({ files = {}, cached = {}, origin = 'https://boot.example' } = {
       await Promise.all(waits)
       handlers.activate({ waitUntil })
       await Promise.all(waits)
+    },
+    message: async (data) => {
+      const pending = []
+      handlers.message({ data, waitUntil: (promise) => pending.push(promise) })
+      await Promise.all(pending)
+      return pending.length
     },
     fetch: (url) => {
       let response
@@ -74,6 +80,16 @@ const assets = {
   '/assets/favicon.png': 'icon',
   '/assets/style.css': 'styles'
 }
+
+test('service worker only claims clients for the bootloader claim message', async (t) => {
+  const sw = worker()
+  t.equal(await sw.message({ type: 'config' }), 0, 'ignores unrelated messages')
+  t.equal(await sw.message({ type: 'ipfs-boot:claim' }), 0, 'requires the exact message tag')
+  t.equal(sw.state.claims, 0, 'unrelated messages do not claim clients')
+  t.equal(await sw.message('ipfs-boot:claim'), 1, 'keeps the claim alive with waitUntil')
+  t.equal(sw.state.claims, 1, 'claims clients for the bootloader message')
+  t.end()
+})
 
 test('service worker installs when index.html exists and root is missing', async (t) => {
   const sw = worker({ files: { ...assets, '/index.html': 'R2 index' } })
