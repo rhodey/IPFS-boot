@@ -1,5 +1,12 @@
 # IPFS-boot FAQ
 
+### Is IPFS alive?
+
+I'm going to be honest with you: its kind of dead. If someone steps up and hosts a no-nonsense public gateway
+that's really all thats needed but the money incentive is not there rn. IPFS-boot is a proven concept that can
+work with any content-addressable technology and I've got ears open for the next best thing. TBH: assuming users
+are willing to install Tailscale may be the next gateway to secure front-end apps.
+
 ### How are updates booted?
 
 The HTML, CSS, and JS of your app is dynamically added to the HTML DOM, what is being done is very
