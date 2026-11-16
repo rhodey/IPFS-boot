@@ -1,29 +1,36 @@
-# IPFS-boot
-## FAQ
+# IPFS-boot FAQ
 
-### How are updates booted
-The HTML, CSS, and JS of your app is dynamically added to the HTML DOM, what is being done is very similar to how "hot reload" works when developing angular or react. Take a look at [javascript/src/index.js](/javascript/src/index.js) it is only 350 lines.
+### Is IPFS alive?
 
-### What are some examples of attestation
-+ [Signal uses attestation](https://signal.org/blog/private-contact-discovery/) to provide private contact discovery
-+ [Attest.link](https://attest.link) is a domain I bought to do something with headless browsers and screenshots
-+ There is a lot of room in this space and I am not keen to give up all ideas
+I'm going to be honest with you: its kind of dead. If someone steps up and hosts a no-nonsense public gateway
+that's really all thats needed but the money incentive is not there rn. IPFS-boot is a proven concept that can
+work with any content-addressable technology and I've got ears open for the next best thing. TBH: assuming users
+are willing to install Tailscale may be the next gateway to secure front-end apps.
 
-### Why is IPFS-boot written with choo
-You dont need to write your app with [choo](https://github.com/choojs/choo) but you might enjoy it, choo is preferred because it has low barrier to entry
+### How are updates booted?
 
-### How to style IPFS-boot in an app update
-The HTML and CSS which IPFS-boot uses can be seen in [javascript/src/view.js](/javascript/src/view.js) and [javascript/assets/style.css](/javascript/assets/style.css)
+The HTML, CSS, and JS of your app is dynamically added to the HTML DOM, what is being done is very
+similar to how "hot reload" works when developing React. Take a look at [package/src/index.js](/package/src/index.js)
+it is only 350 lines.
 
-Include in your update /_static/boot.css with rules which target the HTML elements
+### Why is IPFS-boot written with choo?
 
-### What to do before prod
-Search [javascript/src/index.js](/javascript/src/index.js) and [javascript/src/sw.js](/javascript/src/sw.js) for "todo" (about 5 items)
+You dont need to write your app with [choo](https://github.com/choojs/choo) but you might enjoy it,
+choo is my favorite.
 
-### Downsides
+### What to do before prod?
+
+Search [package/src/index.js](/package/src/index.js) and [package/src/sw.js](/package/src/sw.js)
+for "todo" (about 5 items).
+
+Then: [IPFS-boot-react](https://github.com/rhodey/IPFS-boot-react) or [IPFS-boot-choo](https://github.com/rhodey/IPFS-boot-choo).
+
+### Downsides?
+
 This could have been figured out sooner!
 
-[bybit loses 1.5B](https://news.ycombinator.com/item?id=43140754), [brave removes ipfs](https://news.ycombinator.com/item?id=41381593)
+[bybit hacked](https://news.ycombinator.com/item?id=43140754), [polymarket hacked](https://www.securityweek.com/polymarket-returns-3-9-million-to-traders-as-debugbear-cites-dns-hijack/).
 
 ### License
+
 MIT

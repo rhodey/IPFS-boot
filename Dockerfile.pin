@@ -1,105 +1,144 @@
-FROM ubuntu:24.04
+# syntax=docker/dockerfile:1
+FROM alpine:3.22@sha256:49340b346798875b5592e5d420241f2f9cfba5f47e62ebb1446a1b34734e898f AS alpine
 
-RUN apt update
-RUN apt install -y curl unzip git
+FROM alpine AS kubo
+ARG TARGETARCH
+RUN apk add --no-cache curl
+RUN <<'EOF'
+set -eu
 
-# ipfs cli = native pin
-WORKDIR /root/ipfs
-RUN curl https://dist.ipfs.tech/kubo/v0.32.0/kubo_v0.32.0_linux-amd64.tar.gz -o kubo_v0.32.0_linux-amd64.tar.gz
-RUN tar -xvzf kubo_v0.32.0_linux-amd64.tar.gz
-RUN cd kubo && bash -c "./install.sh"
+# Keep the version and release checksums together when updating Kubo.
+version=0.32.0
+case "$TARGETARCH" in
+  amd64) checksum=f0a5afe5b7618b15610d52a5b2318e3fd09e0b2d9ada203e06fbe4ce7141a8d280e2ac26b6a7362e6a40efced707000eb1f4d4f4d11a08a46f5b7b27caf7b832 ;;
+  arm64) checksum=7a1fa43a0324a930caccea070f210436fee5c6b67b3415770d4798f9021ca6702940108fdca0c337636c4564d9d7c9d2cad65cb82e2d904b3df52472025f548e ;;
+  *) echo "Unsupported Kubo architecture: $TARGETARCH" >&2; exit 1 ;;
+esac
 
-COPY <<EOF /root/ipfs.sh
-# add dir
-ipfs init >>/dev/null 2>&1
-cid=\$(ipfs add -q -r /root/dist | tail -n 1)
-echo "CIDv0 = \$cid"
-cb32=\$(ipfs cid base32 "\$cid")
-echo "CIDv1 = \$cb32"
-# pin local
-echo "starting daemon ..."
-ipfs daemon >>/dev/null 2>&1 &
-sleep 3
-ipfs pin add "$\cb32"
-# upload
-ipfs pin remote service add my_pin "\$pin_api" "\$pin_token"
-echo "ok. may take up to 10 minutes for remote pin to succeed ..."
-echo "may never succeed depending on your NAT ..."
-begin=\$(date)
-echo "begin = \$begin"
-ipfs pin remote add --service=my_pin "\$cb32"
-end=\$(date)
-echo "done: https://\$cb32.ipfs.dweb.link/"
-echo "end = \$end"
+archive="kubo_v${version}_linux-$TARGETARCH.tar.gz"
+cd /tmp
+curl --fail --location --show-error --silent --retry 2 \
+  --connect-timeout 15 --max-time 120 \
+  "https://github.com/ipfs/kubo/releases/download/v${version}/${archive}" -o "$archive"
+printf '%s  %s\n' "$checksum" "$archive" | sha512sum -c -
+tar -xzf "$archive" kubo/ipfs
+install -m 755 kubo/ipfs /usr/local/bin/ipfs
+rm -rf "$archive" kubo
 EOF
 
-# filebase = fast pin
-WORKDIR /root/s3
-RUN curl https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip
-RUN unzip awscliv2.zip
-RUN bash -c "./aws/install"
+FROM alpine
+# Alpine's musl-compatible AWS CLI; no bundled glibc installer is needed.
+RUN apk add --no-cache aws-cli=2.27.25-r0 ca-certificates gcompat
+ENV IPFS_PATH=/tmp/ipfs \
+    AWS_PAGER=""
+COPY --from=kubo /usr/local/bin/ipfs /usr/local/bin/ipfs
+RUN ipfs version && aws --version
+COPY --chmod=755 <<'EOF' /usr/local/bin/pin-dist
+#!/bin/sh
+set -eu
 
-COPY <<EOF /root/filebase.sh
-# add dir
-ipfs init >>/dev/null 2>&1
-cid=\$(ipfs add -q -r /root/dist | tail -n 1)
-echo "CIDv0 = \$cid"
-cb32=\$(ipfs cid base32 "\$cid")
-echo "CIDv1 = \$cb32"
-# create .car
-ipfs dag export "\$cb32" > /root/dist.car
-# upload
-export AWS_DEFAULT_REGION=us-east-1
-export AWS_ACCESS_KEY_ID=\$pin_filebase_access
-export AWS_SECRET_ACCESS_KEY=\$pin_filebase_secret
-aws --endpoint https://s3.filebase.com s3 cp /root/dist.car s3://\$pin_filebase_bucket/\$cb32 --metadata 'import=car'
-echo "done: https://\$cb32.ipfs.dweb.link"
+bootloader=
+case "$#:${1:-}" in
+  0:) ;;
+  1:--boot) bootloader=1 ;;
+  *) echo "Usage: pin-dist [--boot]" >&2; exit 2 ;;
+esac
+
+cloudflare="${pin_cloudflare_api:-}${pin_cloudflare_access:-}${pin_cloudflare_secret:-}"
+filebase="${pin_filebase_bucket:-}${pin_filebase_access:-}${pin_filebase_secret:-}"
+if [ -z "$cloudflare$filebase" ]; then
+  echo "Configure at least one pin service in .env (see PIN.md)." >&2
+  exit 1
+fi
+if [ ! -d /root/dist ] || [ -z "$(ls -A /root/dist)" ]; then
+  echo "Mount a nonempty build directory at /root/dist." >&2
+  exit 1
+fi
+if [ -n "$cloudflare" ]; then
+  : "${pin_cloudflare_api:?Set pin_cloudflare_api}" "${pin_cloudflare_access:?Set pin_cloudflare_access}" "${pin_cloudflare_secret:?Set pin_cloudflare_secret}"
+  # The configured URL includes the bucket; AWS CLI takes it separately.
+  api=${pin_cloudflare_api%/}
+  cloudflare_endpoint=${api%/*}
+  cloudflare_bucket=${api##*/}
+  case "$api" in
+    https://*/*|http://*/*) ;;
+    *) echo "pin_cloudflare_api must be an HTTP(S) endpoint followed by /bucket-name." >&2; exit 1 ;;
+  esac
+  case "${cloudflare_endpoint#*://}" in
+    ''|*[/?#@]*) echo "pin_cloudflare_api must contain exactly one bucket path." >&2; exit 1 ;;
+  esac
+  case "$cloudflare_bucket" in
+    ''|*[!a-z0-9.-]*) echo "Invalid bucket name in pin_cloudflare_api." >&2; exit 1 ;;
+  esac
+fi
+if [ -n "$filebase" ]; then
+  : "${pin_filebase_bucket:?Set pin_filebase_bucket}" "${pin_filebase_access:?Set pin_filebase_access}" "${pin_filebase_secret:?Set pin_filebase_secret}"
+fi
+if [ -n "$bootloader" ]; then
+  if [ -z "$cloudflare" ]; then
+    echo "--boot requires Cloudflare R2 configuration." >&2
+    exit 1
+  fi
+  for path in index.html sw.js bundle.js assets/favicon.png assets/style.css; do
+    if [ ! -f "/root/dist/$path" ] || [ ! -s "/root/dist/$path" ]; then
+      echo "--boot requires a nonempty /root/dist/$path." >&2
+      exit 1
+    fi
+  done
+fi
+
+ipfs init >/dev/null
+cid=$(ipfs --offline add -Qr /root/dist)
+cb32=$(ipfs cid base32 "$cid")
+echo "CIDv0 = $cid"
+echo "CIDv1 = $cb32"
+
+if [ -n "$cloudflare" ]; then
+  # Keep both printed root CIDs and the CID forms embedded in directory links.
+  printf '%s\n%s\n' "$cid" "$cb32" > /tmp/cids
+  ipfs --offline refs --recursive --unique "$cb32" >> /tmp/cids
+  sort -u /tmp/cids > /tmp/unique-cids
+  (
+    export AWS_DEFAULT_REGION=auto
+    export AWS_ACCESS_KEY_ID="$pin_cloudflare_access"
+    export AWS_SECRET_ACCESS_KEY="$pin_cloudflare_secret"
+    while IFS= read -r block; do
+      ipfs --offline block get "$block" > /tmp/block
+      aws --endpoint-url "$cloudflare_endpoint" s3 cp /tmp/block \
+        "s3://$cloudflare_bucket/ipfs/$block" --content-type application/vnd.ipld.raw --only-show-errors
+    done < /tmp/unique-cids
+    if [ -n "$bootloader" ]; then
+      # Only an explicit bootloader publish may replace the website's root files.
+      upload_file() {
+        aws --endpoint-url "$cloudflare_endpoint" s3 cp "/root/dist/$1" \
+          "s3://$cloudflare_bucket/$1" --content-type "$2" \
+          --cache-control no-cache --only-show-errors
+      }
+      upload_file assets/favicon.png image/png
+      upload_file assets/style.css text/css
+      upload_file bundle.js text/javascript
+      upload_file sw.js text/javascript
+      upload_file index.html text/html
+    fi
+  )
+  echo "Cloudflare: uploaded $(wc -l < /tmp/unique-cids | tr -d ' ') blocks."
+  if [ -n "$bootloader" ]; then
+    echo "Cloudflare: uploaded bootloader website files."
+  fi
+fi
+
+if [ -n "$filebase" ]; then
+  ipfs --offline dag export "$cb32" > /tmp/dist.car
+  (
+    export AWS_DEFAULT_REGION=us-east-1
+    export AWS_ACCESS_KEY_ID="$pin_filebase_access"
+    export AWS_SECRET_ACCESS_KEY="$pin_filebase_secret"
+    aws --endpoint-url https://s3.filebase.com s3 cp /tmp/dist.car \
+      "s3://$pin_filebase_bucket/$cb32" --metadata 'import=car' --only-show-errors
+  )
+  echo "Filebase: uploaded CAR."
+fi
+
+echo "done: https://$cb32.ipfs.dweb.link/"
 EOF
-
-# storacha = fast pin
-WORKDIR /root/js
-ENV NVM_DIR=/root/js/.nvm
-RUN git clone --depth 1 --branch v0.40.1 https://github.com/nvm-sh/nvm nvm
-RUN cd nvm && . ./nvm.sh && nvm install 20.11.1
-ENV PATH="/root/js/.nvm/versions/node/v20.11.1/bin:$PATH"
-RUN node -v && npx -y @web3-storage/w3cli@7.12.0 -v
-
-COPY <<EOF /root/storacha.sh
-# login
-if [ ! -f "/root/.config/w3access/w3cli.json" ]; then
-  npx @web3-storage/w3cli@7.12.0 login "\$pin_storacha_email"
-fi
-npx @web3-storage/w3cli@7.12.0 space use "\$pin_storacha_space"
-# add dir
-ipfs init >>/dev/null 2>&1
-cid=\$(ipfs add -q -r /root/dist | tail -n 1)
-echo "CIDv0 = \$cid"
-cb32=\$(ipfs cid base32 "\$cid")
-echo "CIDv1 = \$cb32"
-# create .car
-ipfs dag export "\$cb32" > /root/dist.car
-# upload
-npx @web3-storage/w3cli@7.12.0 up -c /root/dist.car
-echo "done: https://\$cb32.ipfs.dweb.link"
-EOF
-
-COPY <<EOF /root/cmd.sh
-if [[ -v pin_api ]]; then
-    bash -c "/root/ipfs.sh"
-    echo ""
-fi
-if [[ -v pin_filebase_bucket ]]; then
-    bash -c "/root/filebase.sh"
-    echo ""
-fi
-if [[ -v pin_storacha_email ]]; then
-    bash -c "/root/storacha.sh"
-fi
-EOF
-
-RUN chmod +x /root/ipfs.sh
-RUN chmod +x /root/filebase.sh
-RUN chmod +x /root/storacha.sh
-RUN chmod +x /root/cmd.sh
-
-CMD ["bash", "-c", "/root/cmd.sh"]
+CMD ["pin-dist"]

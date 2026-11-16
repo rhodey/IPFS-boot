@@ -3,6 +3,5 @@
 
 dist/
 
-javascript/dist
-javascript/node_modules
-rust/target
+package/dist
+package/node_modules

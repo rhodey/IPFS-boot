@@ -4,12 +4,9 @@
 .git/
 dist/
 
-javascript/*.swp
-javascript/assets/*.swp
-javascript/src/*.swp
-javascript/test/*.swp
-javascript/dist
-javascript/node_modules
-
-rust/src/*.swp
-rust/target
+package/*.swp
+package/assets/*.swp
+package/src/*.swp
+package/test/*.swp
+package/dist
+package/node_modules

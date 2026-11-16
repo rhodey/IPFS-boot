@@ -2,6 +2,7 @@ const chooo = require('choo')
 const devtools = require('choo-devtools')
 const fetch = require('./fetch.js')
 const storage = require('./storage.js')
+const swInstall = require('./sw-install.js')()
 
 // todo: choose for prod
 const updateInterval = 10_000
@@ -117,6 +118,7 @@ function store(statee, emitter) {
     } catch (err) {
       console.log('list', err)
     }
+    setInterval(checkForUpdates, updateInterval)
     state.loading = false
     emitter.emit('render')
   }
@@ -132,7 +134,8 @@ function store(statee, emitter) {
     return boot(state.version)
   }
 
-  const start = () => {
+  const start = async () => {
+    await swInstall
     state.version = storage.version()
     if (!state.version) { return firstBoot() }
     const hash = window.location.hash
@@ -360,13 +363,6 @@ document.addEventListener('keydown', (event) => {
   state.local.pop()
   choo.emit('render')
 })
-
-// setup service worker
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js')
-    .then((reg) => console.log('sw init'))
-    .catch((err) => console.log('sw error', err))
-}
 
 interceptListeners()
 choo.use(devtools())

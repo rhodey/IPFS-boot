@@ -1,8 +1,0 @@
-.env*
-*.swp
-
-index.html
-test/
-
-dist/
-assets/

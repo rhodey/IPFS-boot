@@ -1,0 +1,10 @@
+.env*
+*.swp
+
+dist/
+assets/
+test/
+index.html
+
+src/**/*.js
+!src/bin.js
