@@ -139,10 +139,6 @@ if [ -n "$filebase" ]; then
   echo "Filebase: uploaded CAR."
 fi
 
-if [ -n "$bootloader" ] && [ -n "${pin_cloudflare_api_dev_url:-}" ]; then
-  echo "done: ${pin_cloudflare_api_dev_url%/}/index.html"
-else
-  echo "done: https://$cb32.ipfs.dweb.link/"
-fi
+echo "done: https://$cb32.ipfs.dweb.link/"
 EOF
 CMD ["pin-dist"]

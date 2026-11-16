@@ -181,7 +181,7 @@ class PinTests(unittest.TestCase):
             self.assertEqual(headers['Cache-Control'], 'no-cache')
             self.assertIn('Credential=r2-access/', headers['Authorization'])
             self.assertIn('/auto/s3/', headers['Authorization'])
-        self.assertIn('done: https://static.example/index.html', result.stdout)
+        self.assertEqual(result.stdout.splitlines()[-1], f'done: https://{self.cid1}.ipfs.dweb.link/')
 
     def test_bootloader_validation_uploads_nothing(self):
         self.pin(self.filebase, success=False, args=('--boot',))

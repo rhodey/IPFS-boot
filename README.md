@@ -62,7 +62,7 @@ docker run --rm -i -v ./dist:/root/dist:ro --env-file .env ipfs-pin pin-dist --b
 > Cloudflare: uploaded 9 blocks.
 > Cloudflare: uploaded bootloader website files.
 > Filebase: uploaded CAR.
-> done: https://pub-daf36e7ba4504fa99be07f38a5333717.r2.dev/index.html
+> done: https://bafybeifhc32ghpylhfhkmf4kbxlx6ixwj4vbvwki3c6eku2hlwznxue5fm.ipfs.dweb.link/
 ```
 
 Your bootloader is now live and discoverable with v0 and v1 CIDs,

@@ -118,6 +118,7 @@ function store(statee, emitter) {
     } catch (err) {
       console.log('list', err)
     }
+    setInterval(checkForUpdates, updateInterval)
     state.loading = false
     emitter.emit('render')
   }
