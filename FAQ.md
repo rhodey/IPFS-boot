@@ -5,7 +5,7 @@
 I'm going to be honest with you: its kind of dead. If someone steps up and hosts a no-nonsense public gateway
 that's really all thats needed but the money incentive is not there rn. IPFS-boot is a proven concept that can
 work with any content-addressable technology and I've got ears open for the next best thing. TBH: assuming users
-are willing to install Tailscale may be the next gateway to secure front-end apps.
+are willing to install, Tailscale may be the next gateway to secure front-end apps.
 
 ### How are updates booted?
 
