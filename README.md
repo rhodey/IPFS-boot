@@ -25,8 +25,7 @@ which can restyle it.
 
 ## Demos
 
-If you click "boot!" without reading: you can return to boot list
-anytime by add #boot to the url:
+Return to boot list anytime by add #boot to the url:
 
 + React https://bafybeidquva2qhtucrhvohmu5deggqxokqvdgbpv5voza5ghd3pjeyixsm.ipfs.dweb.link
 + Choo https://bafybeifym2gfx7vcf7mo725u7bakvcy4xumk6s4uwh3ew5gsjyghn7erhy.ipfs.dweb.link
