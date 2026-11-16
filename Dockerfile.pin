@@ -37,6 +37,13 @@ COPY --chmod=755 <<'EOF' /usr/local/bin/pin-dist
 #!/bin/sh
 set -eu
 
+bootloader=
+case "$#:${1:-}" in
+  0:) ;;
+  1:--boot) bootloader=1 ;;
+  *) echo "Usage: pin-dist [--boot]" >&2; exit 2 ;;
+esac
+
 cloudflare="${pin_cloudflare_api:-}${pin_cloudflare_access:-}${pin_cloudflare_secret:-}"
 filebase="${pin_filebase_bucket:-}${pin_filebase_access:-}${pin_filebase_secret:-}"
 if [ -z "$cloudflare$filebase" ]; then
@@ -67,6 +74,18 @@ fi
 if [ -n "$filebase" ]; then
   : "${pin_filebase_bucket:?Set pin_filebase_bucket}" "${pin_filebase_access:?Set pin_filebase_access}" "${pin_filebase_secret:?Set pin_filebase_secret}"
 fi
+if [ -n "$bootloader" ]; then
+  if [ -z "$cloudflare" ]; then
+    echo "--boot requires Cloudflare R2 configuration." >&2
+    exit 1
+  fi
+  for path in index.html sw.js bundle.js assets/favicon.png assets/style.css; do
+    if [ ! -f "/root/dist/$path" ] || [ ! -s "/root/dist/$path" ]; then
+      echo "--boot requires a nonempty /root/dist/$path." >&2
+      exit 1
+    fi
+  done
+fi
 
 ipfs init >/dev/null
 cid=$(ipfs --offline add -Qr /root/dist)
@@ -88,8 +107,24 @@ if [ -n "$cloudflare" ]; then
       aws --endpoint-url "$cloudflare_endpoint" s3 cp /tmp/block \
         "s3://$cloudflare_bucket/ipfs/$block" --content-type application/vnd.ipld.raw --only-show-errors
     done < /tmp/unique-cids
+    if [ -n "$bootloader" ]; then
+      # Only an explicit bootloader publish may replace the website's root files.
+      upload_file() {
+        aws --endpoint-url "$cloudflare_endpoint" s3 cp "/root/dist/$1" \
+          "s3://$cloudflare_bucket/$1" --content-type "$2" \
+          --cache-control no-cache --only-show-errors
+      }
+      upload_file assets/favicon.png image/png
+      upload_file assets/style.css text/css
+      upload_file bundle.js text/javascript
+      upload_file sw.js text/javascript
+      upload_file index.html text/html
+    fi
   )
   echo "Cloudflare: uploaded $(wc -l < /tmp/unique-cids | tr -d ' ') blocks."
+  if [ -n "$bootloader" ]; then
+    echo "Cloudflare: uploaded bootloader website files."
+  fi
 fi
 
 if [ -n "$filebase" ]; then
@@ -103,6 +138,10 @@ if [ -n "$filebase" ]; then
   )
 fi
 
-echo "done: https://$cb32.ipfs.dweb.link/"
+if [ -n "$bootloader" ] && [ -n "${pin_cloudflare_api_dev_url:-}" ]; then
+  echo "done: ${pin_cloudflare_api_dev_url%/}/index.html"
+else
+  echo "done: https://$cb32.ipfs.dweb.link/"
+fi
 EOF
 CMD ["pin-dist"]

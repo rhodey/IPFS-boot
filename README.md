@@ -56,7 +56,7 @@ Read [PIN.md](/PIN.md) to configure IPFS pinning then:
 
 ```
 docker buildx build --load -f Dockerfile.pin -t ipfs-pin .
-docker run --rm -i -v ./dist:/root/dist:ro --env-file .env ipfs-pin
+docker run --rm -i -v ./dist:/root/dist:ro --env-file .env ipfs-pin pin-dist --boot
 > CIDv0 = QmQcFZUsp47bckyJTwzL6mr4HWNrGvdnRW6Z95jJbxC5bF
 > CIDv1 = bafybeibbwz7bew6l3e5lsgneebvhfe63qclvhygkmh6ba7nk566a4qdy7i
 > upload: ../dist.car to s3://bucket-name/bafybeibbwz7bew6l3e5lsgneebvhfe63qclvhygkmh6ba7nk566a4qdy7i

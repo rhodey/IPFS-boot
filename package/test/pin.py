@@ -17,7 +17,8 @@ class S3Handler(BaseHTTPRequestHandler):
     def do_PUT(self):
         body = self.rfile.read(int(self.headers['Content-Length']))
         self.server.uploads.append((self.path, body, dict(self.headers)))
-        self.send_response(403 if self.server.fail else 200)
+        failed = self.server.fail or self.path == self.server.fail_path
+        self.send_response(403 if failed else 200)
         self.send_header('ETag', '"test"')
         self.send_header('Content-Length', '0')
         self.end_headers()
@@ -43,6 +44,12 @@ class PinTests(unittest.TestCase):
         (cls.dist / 'nested' / 'copy.bin').write_bytes(cls.large)
         (cls.dist / 'nested' / 'empty').touch()
         (cls.dist / 'index.html').write_text('<h1>IPFS pin test</h1>')
+        (cls.dist / 'sw.js').write_text('self.addEventListener("fetch", () => {})')
+        (cls.dist / 'bundle.js').write_text('console.log("bootloader")')
+        (cls.dist / 'assets').mkdir()
+        (cls.dist / 'assets' / 'favicon.png').write_bytes(b'\x89PNG\r\n\x1a\nfixture')
+        (cls.dist / 'assets' / 'style.css').write_text('body { color: black; }')
+        (cls.dist / '_redirects').write_text('/* /index.html 200')
         (cls.root / 'aws').write_text(
             '#!/bin/sh\nset -eu\n'
             'if [ "$2" = https://s3.filebase.com ]; then\n'
@@ -63,6 +70,7 @@ class PinTests(unittest.TestCase):
     def setUp(self):
         self.server.uploads = []
         self.server.fail = False
+        self.server.fail_path = None
         self.env = {k: v for k, v in os.environ.items()
                     if not k.startswith(('pin_', 'AWS_'))}
         self.env.update({
@@ -82,8 +90,8 @@ class PinTests(unittest.TestCase):
             'pin_filebase_secret': 'filebase-secret',
         }
 
-    def pin(self, config, success=True):
-        result = subprocess.run(['pin-dist'], env={**self.env, **config},
+    def pin(self, config, success=True, args=()):
+        result = subprocess.run(['pin-dist', *args], env={**self.env, **config},
                                 capture_output=True, text=True, timeout=90)
         if success:
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
@@ -99,11 +107,11 @@ class PinTests(unittest.TestCase):
         return subprocess.check_output(['ipfs', '--offline', *args],
                                        env=env or self.env, stderr=subprocess.PIPE)
 
-    def check_r2(self):
+    def check_r2(self, bootloader=False):
         refs = self.ipfs('refs', '-r', '-u', self.cid1).decode().splitlines()
         expected = {self.cid0, self.cid1, *refs}
         uploads = [(path, body, headers) for path, body, headers in self.server.uploads
-                   if path.startswith('/r2-test/')]
+                   if path.startswith('/r2-test/ipfs/')]
         self.assertEqual(len(uploads), len(expected))
         self.assertEqual({path for path, _, _ in uploads},
                          {'/r2-test/ipfs/' + cid for cid in expected})
@@ -112,6 +120,10 @@ class PinTests(unittest.TestCase):
             self.assertEqual(headers['Content-Type'], 'application/vnd.ipld.raw')
             self.assertIn('Credential=r2-access/', headers['Authorization'])
             self.assertIn('/auto/s3/', headers['Authorization'])
+        if not bootloader:
+            self.assertTrue(all(path.startswith('/r2-test/ipfs/')
+                                for path, _, _ in self.server.uploads
+                                if path.startswith('/r2-test/')))
 
     def check_filebase(self):
         uploads = [(path, body, headers) for path, body, headers in self.server.uploads
@@ -144,6 +156,65 @@ class PinTests(unittest.TestCase):
         self.pin({**self.r2, **self.filebase})
         self.check_r2()
         self.check_filebase()
+
+    def test_bootloader_uploads_website_and_pins(self):
+        result = self.pin({**self.r2, **self.filebase,
+                           'pin_cloudflare_api_dev_url': 'https://static.example/'},
+                          args=('--boot',))
+        self.check_r2(bootloader=True)
+        self.check_filebase()
+        expected = {
+            'index.html': 'text/html',
+            'sw.js': 'text/javascript',
+            'bundle.js': 'text/javascript',
+            'assets/favicon.png': 'image/png',
+            'assets/style.css': 'text/css',
+        }
+        uploads = [(path.removeprefix('/r2-test/'), body, headers)
+                   for path, body, headers in self.server.uploads
+                   if path.startswith('/r2-test/') and not path.startswith('/r2-test/ipfs/')]
+        self.assertEqual(len(uploads), len(expected))
+        self.assertEqual({path for path, _, _ in uploads}, set(expected))
+        for path, body, headers in uploads:
+            self.assertEqual(body, (self.dist / path).read_bytes())
+            self.assertEqual(headers['Content-Type'], expected[path])
+            self.assertEqual(headers['Cache-Control'], 'no-cache')
+            self.assertIn('Credential=r2-access/', headers['Authorization'])
+            self.assertIn('/auto/s3/', headers['Authorization'])
+        self.assertIn('done: https://static.example/index.html', result.stdout)
+
+    def test_bootloader_validation_uploads_nothing(self):
+        self.pin(self.filebase, success=False, args=('--boot',))
+        self.pin({**self.filebase, 'pin_cloudflare_access': 'partial'},
+                 success=False, args=('--boot',))
+        for name in ['index.html', 'sw.js', 'bundle.js',
+                     'assets/favicon.png', 'assets/style.css']:
+            path = self.dist / name
+            content = path.read_bytes()
+            try:
+                path.unlink()
+                self.pin(self.r2, success=False, args=('--boot',))
+                path.touch()
+                self.pin(self.r2, success=False, args=('--boot',))
+            finally:
+                path.write_bytes(content)
+        self.assertEqual(self.server.uploads, [])
+
+    def test_invalid_arguments_upload_nothing(self):
+        for args in [('--unknown',), ('--boot', '--boot'),
+                     ('--boot', 'extra')]:
+            with self.subTest(args=args):
+                self.pin(self.r2, success=False, args=args)
+        self.assertEqual(self.server.uploads, [])
+
+    def test_bootloader_upload_failure_is_reported(self):
+        self.server.fail_path = '/r2-test/sw.js'
+        self.pin({**self.r2, **self.filebase}, success=False,
+                 args=('--boot',))
+        paths = [path for path, _, _ in self.server.uploads]
+        self.assertIn('/r2-test/sw.js', paths)
+        self.assertNotIn('/r2-test/index.html', paths)
+        self.assertFalse(any(path.startswith('/filebase-test/') for path in paths))
 
     def test_invalid_configuration_uploads_nothing(self):
         cases = [

@@ -9,7 +9,31 @@ import mime from 'mime'
 const cacheName = 'ipfsboot'
 
 // offline files go here
-const cacheAssets = ['/', '/sw.js', '/bundle.js', '/assets/favicon.png', '/assets/style.css']
+const cacheAssets = ['/sw.js', '/bundle.js', '/assets/favicon.png', '/assets/style.css']
+
+// R2 serves named objects; gateways can also serve the directory index at '/'.
+const fetchIndex = async () => {
+  for (const path of ['/index.html', '/']) {
+    let response
+    try {
+      response = await fetch(path)
+    } catch (err) {
+      continue
+    }
+    if (!response.ok) { continue }
+    return response
+  }
+  throw new Error('Unable to load /index.html or / for the bootloader')
+}
+
+const getIndex = async () => {
+  const cache = await caches.open(cacheName)
+  const cached = await cache.match('/index.html') || await cache.match('/')
+  if (cached) { return cached }
+  const response = await fetchIndex()
+  await cache.put('/index.html', response.clone())
+  return response
+}
 
 const isFile = (obj) => obj.type === 'file'
 const isDir = (obj) => obj.type === 'directory' || obj.type === 'hamt-sharded-directory'
@@ -32,7 +56,11 @@ self.addEventListener('install', (event) => {
   console.log('sw install')
   !DEV && event.waitUntil(
     caches.open(cacheName)
-      .then((cache) => cache.addAll(cacheAssets))
+      .then(async (cache) => {
+        const index = await fetchIndex()
+        await cache.addAll(cacheAssets)
+        await cache.put('/index.html', index)
+      })
   )
   self.skipWaiting()
 })
@@ -179,7 +207,7 @@ self.addEventListener('fetch', (event) => {
   let gateway = selff ? null : (url.href.match(pathGatewayRegex) ?? url.href.match(subdomainGatewayRegex))
   if (!selff && !gateway?.groups) { return }
   const doIndex = selff && !cacheAssets.includes(url.pathname)
-  if (doIndex) { return event.respondWith(caches.match('/')) }
+  if (doIndex) { return event.respondWith(getIndex()) }
   const ipfs = isIpfsCompanion(url)
   gateway = ipfs ? null : gateway?.groups
   event.respondWith(cacheFirst(event.request, event, gateway))
